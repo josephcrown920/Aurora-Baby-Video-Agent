@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "AI Video Editor"
+description = "A responsive browser-based video editing workspace inspired by modern AI creative tools, with media import, clip selection, playback controls, timeline editing, and export interactions."
+version = "1.0.0"
+id = "artifacts/video-editor"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23091
+
+[services.development]
+run = "pnpm --filter @workspace/video-editor run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/video-editor", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/video-editor/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23091"
+BASE_PATH = "/"

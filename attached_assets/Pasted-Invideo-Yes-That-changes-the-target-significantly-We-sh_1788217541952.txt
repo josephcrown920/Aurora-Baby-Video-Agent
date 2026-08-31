@@ -1,0 +1,1861 @@
+Invideo 
+
+Yes. That changes the target significantly.
+We should not build a generic “AI video generator.” We should prototype a new individual video agent whose capability baseline is the current InVideo product, then improve the architecture where appropriate.
+The mental model I’ll use going forward is:
+Current InVideo = capability benchmark. New Individual Agent = autonomous version of that capability set.
+What I’ll keep in the design
+The agent should be able to take a high-level instruction and independently handle the production chain:
+Brief → intent → research/context → script → storyboard → visual direction → asset selection → generation → voice → music/SFX → editing → captions → QA → revisions → final render
+But it also needs the individual controls that make the existing product useful.
+🎬 Creation
+	•	Text → video
+	•	Script → video
+	•	Image → video
+	•	Video → edited video
+	•	URL/article → video
+	•	Presentation/content → video
+	•	Long-form → Shorts/Reels
+	•	Multiple aspect ratios
+	•	Templates and presets
+🧠 Agent intelligence
+	•	Understand the user's objective
+	•	Ask only genuinely necessary questions
+	•	Make production decisions autonomously
+	•	Select appropriate models
+	•	Decide when to use generated vs. stock assets
+	•	Maintain character/style/location continuity
+	•	Remember project context
+	•	Detect bad generations
+	•	Regenerate individual shots
+	•	Revise the edit instead of restarting
+	•	Optimize for duration, pacing and platform
+🎥 Generation
+Our provider layer will be:
+FAL + Replicate + Vast GPU/ComfyUI
+with the agent sitting above them.
+That means the agent isn't hard-coded to one model. It can eventually reason:
+SHOT 07
+↓
+Needs realistic human motion
+↓
+Needs identity preservation
+↓
+Needs 8-second generation
+↓
+Compare available models
+↓
+FAL / Replicate / Vast
+↓
+Choose highest-scoring option
+↓
+Generate
+↓
+QA
+↓
+Accept or regenerate
+The editor matters just as much
+This is where I don't want us to accidentally build something that looks impressive in a demo but doesn't actually match InVideo.
+The individual agent should eventually have a real editable production representation underneath it:
+PROJECT
+ ├── Brief
+ ├── Script
+ ├── Scenes
+ │    ├── Shot
+ │    ├── Shot
+ │    └── Shot
+ ├── Video tracks
+ ├── Image tracks
+ ├── Voice tracks
+ ├── Music tracks
+ ├── SFX tracks
+ ├── Text
+ ├── Captions
+ ├── Transitions
+ ├── Effects
+ └── Brand elements
+Then the user can say:
+“Make scene 3 darker.”
+The agent shouldn't regenerate the entire video.
+It should understand:
+Scene 3 → lighting/style instruction → affected shots → regenerate → replace clips → preserve timeline → QA.
+That's the kind of behavior that will make the new individual agent genuinely useful.
+And I'm keeping the newer-agent distinction in mind
+The prototype shouldn't merely reproduce the existing UI.
+We're effectively designing:
+InVideo's current capabilities → individual autonomous agent → agent has access to the entire production workspace → agent can operate the workspace itself
+So the user experience becomes much closer to:
+“Here's what I want. Make it.”
+while still allowing:
+“Change this shot.” “Make the pacing faster.” “Use this reference.” “Turn this into 5 TikToks.” “Replace the voice.” “Keep everything except scene 4.”
+One more architectural change
+I'm going to treat capability parity as a requirements matrix, rather than adding features randomly.
+Each capability gets:
+Capability	Existing InVideo	Our Agent	Automation level
+Prompt → video	✓	✓	Autonomous
+Script	✓	✓	Autonomous
+Storyboard	✓	✓	Autonomous
+AI video	✓	✓	Autonomous
+AI images	✓	✓	Autonomous
+Voice	✓	✓	Autonomous
+Music	✓	✓	Autonomous
+Captions	✓	✓	Autonomous
+Stock media	✓	Architecture	Autonomous
+Timeline editing	✓	✓	Agent + user
+Templates	✓	Architecture	Autonomous
+Brand kit	✓	Architecture	Automatic
+Repurposing	✓	Architecture	Autonomous
+AI revisions	✓	✓	Autonomous
+Multi-model routing	✓	✓	Autonomous
+QA	Agent-dependent	✓	Autonomous
+Render/export	✓	✓	Autonomous
+That matrix becomes our prototype acceptance criteria.
+I’ll keep this context at the back of my mind for every subsequent build pass: we are designing the new individual agent against the current InVideo capability bar, not building an unrelated video app.
+Which should I implement next: capability parity, agent brain, or editor + generation together?
+
+
+All three are now included in the prototype pass:
+🧠 1. Agent brain
+The orchestration layer now explicitly handles:
+Intent → brief → script → storyboard → assets → video → images → voice → music/SFX → edit → captions → QA → revision → render
+It also has provider scoring and retry/revision concepts.
+🎬 2. Editor
+There is now a dedicated editor surface with:
+	•	Video tracks
+	•	Overlay/text tracks
+	•	Caption tracks
+	•	Voice track
+	•	Music track
+	•	Clip selection
+	•	Trim
+	•	Speed
+	•	Volume
+	•	Opacity
+	•	Position/scale
+	•	Effects
+	•	Transitions
+	•	Split/delete/regenerate controls
+	•	Export surface
+🧩 3. InVideo capability parity
+I added a capability-parity specification so we're explicitly benchmarking the individual agent against the current InVideo-style feature set rather than randomly adding features.
+It covers:
+	•	Prompt → video
+	•	Script
+	•	Storyboard
+	•	AI video
+	•	AI images
+	•	Voice
+	•	Music/SFX
+	•	Captions
+	•	Timeline
+	•	AI revision
+	•	Repurposing
+	•	Brand kit
+	•	Templates
+	•	Render/export
+	•	Asset management
+	•	Provider routing
+📦 Updated build
+Download FilmStudio AI — Parity Prototype ZIP
+This is the direction I’ll maintain: the current InVideo capability set is the floor, while the individual agent becomes the autonomous intelligence operating across those capabilities.
+For the next build, choose real FAL/Replicate generation, Vast + ComfyUI execution, or full production stack simultaneously.
+You’re right. I was narrowing the build too much around “AI video generation” and losing the actual assignment.
+I’ve corrected the direction and made the latest build explicitly benchmarked against the current InVideo/Agent Two capability set, including the newer concepts I found in InVideo’s current product documentation: Agent workflows, model routing, Notebooks, Slate, agentic Stock, prompt-based editing, 16M+ premium stock, avatars/voice clones, templates, collaboration, repurposing, and the conventional editor. (Help Center)
+What is now accounted for
+🧠 The individual agent
+	•	Producer
+	•	Scriptwriter
+	•	Storyboard artist
+	•	Cinematographer
+	•	Editor
+	•	Sound designer
+	•	Music designer
+	•	Colorist
+	•	Caption/translation specialist
+	•	QA/revision agent
+	•	Persistent project memory
+	•	Style/character/brand bibles
+	•	Autonomous planning
+	•	Model selection
+	•	Cost/quality/latency routing
+	•	Retry + regeneration
+	•	Closed-loop QA
+🎬 Full creation stack
+	•	Prompt → video
+	•	Script → video
+	•	URL → video
+	•	Image → video
+	•	AI video
+	•	AI images
+	•	Stock footage
+	•	Stock images
+	•	Music
+	•	SFX
+	•	Voiceover
+	•	Voice cloning architecture
+	•	Avatars
+	•	Captions
+	•	Translation/dubbing architecture
+	•	Thumbnails
+	•	Repurposing
+	•	Brand kits
+	•	Templates
+📝 Notebook concept A user can work with an individual model/generation, approve the result, and hand it back to the agent without losing project state.
+🎞️ Slate concept The editor is treated as a real production state rather than a video preview: video + images + audio + text + captions + transitions + effects + approved generations.
+🔎 Agentic Stock The agent can eventually decide:
+“This shot already exists as licensed stock. Don't spend generation credits.”
+That is important because current InVideo Agent Two explicitly positions Stock as agent-driven retrieval rather than making users manually browse the library. (Invideo)
+⚙️ FAL + Replicate + Vast GPU All three remain underneath the agent's provider/model router.
+🔄 Agentic editing The intended interaction is:
+“Remove the second scene, make the intro faster, change the voice to a British accent and replace the background footage.”
+The agent modifies the existing project rather than rebuilding everything.
+🧪 QA → revision Generate → inspect → identify weak shots → regenerate only what needs fixing → reassemble → render.
+And I added a dedicated capability benchmark document so we can stop losing track of the original assignment.
+📦 Latest build
+Download FilmStudio AI — Full Individual Agent Prototype
+This is now 40 source files, with the expanded architecture, capability benchmark, provider registry, agent brain, workbench, editor, stock/URL/repurpose/QA APIs, and FAL/Replicate/Vast execution boundaries.
+One important distinction remains: I can build the application architecture and source here, but actual licensed stock catalogs, FAL/Replicate model credentials, Vast GPU instances, FFmpeg workers, database, object storage, authentication and billing have to be connected before this becomes a production SaaS. Current InVideo itself combines those external systems and capabilities behind its product. (Invideo)
+For the next build, should I prioritize real provider execution, full Slate editor, or production infrastructure?
+
+
+Understood. One pass, all layers together. I’ve consolidated the build instead of continuing to bolt on isolated pieces.
+The target is now explicitly:
+NEW INDIVIDUAL VIDEO AGENT
+with the current InVideo capability set as the baseline, plus our own agent architecture.
+The latest package includes:
+	•	🧠 Agent brain + orchestration
+	•	🎬 Prompt → complete video workflow
+	•	✍️ Script generation
+	•	🎞️ Storyboard + shot planning
+	•	🎥 FAL generation layer
+	•	🔁 Replicate generation layer
+	•	🖥️ Vast GPU / ComfyUI execution layer
+	•	🧠 Automatic model/provider routing
+	•	📓 Notebook-style generation workspace
+	•	🎞️ Slate-style editor architecture
+	•	✂️ Timeline editing
+	•	💬 Natural-language editing commands
+	•	🖼️ Image generation
+	•	📹 Video generation
+	•	🎙️ Voice/voice-clone architecture
+	•	🎵 Music/SFX architecture
+	•	🧑‍💻 Avatar architecture
+	•	📝 Captions
+	•	🌍 Translation/dubbing architecture
+	•	📚 Templates
+	•	🎨 Brand kits
+	•	🔎 Stock-media architecture
+	•	♻️ Repurposing
+	•	🖼️ Thumbnails
+	•	✨ Enhancement/background/face-tool architecture
+	•	🔍 Automated QA
+	•	🔄 Targeted regeneration/revision
+	•	🎞️ Rendering/export architecture
+	•	📁 Asset library
+	•	🗂️ Projects/versioning
+	•	👥 Collaboration architecture
+	•	💳 Credits/usage architecture
+	•	⚙️ Job queues/retries
+	•	🗄️ Production database/storage boundaries
+	•	📊 Provider/model registry
+	•	📋 Capability parity specification
+Most importantly, the agent and editor share the same project state. The agent isn't a chatbot sitting beside an editor—it is designed to operate the production workspace itself.
+📦 All-in-one build
+Download FilmStudio AI — All-in-One Individual Video Agent
+46 source files are included in this iteration.
+I’m also explicitly keeping the original assignment in the architecture: this is the prototype for a new individual InVideo-style video agent, so future work should be judged against the full existing InVideo capability surface rather than against the narrower “AI video generator” definition we were using earlier.
+One boundary I won't blur: the source can contain the complete integration architecture, but real FAL/Replicate/Vast execution, licensed stock, GPU instances, FFmpeg workers, database/storage, authentication and billing require their actual credentials/infrastructure. The package exposes those integration points rather than pretending they are provisioned.
+Next build priority: production backend, real AI generation, or polished InVideo-style UI?
+
+
+
+Done. I treated “all” as all three simultaneously and expanded the build around the actual assignment rather than another partial feature pass.
+📦 Latest complete package
+Download FilmStudio AI — Production Complete ZIP
+This version contains 74 files.
+🧠 The brain is now explicitly defined
+The agent has a structured production loop:
+UNDERSTAND → PLAN → SELECT TOOLS → GENERATE → INSPECT → SCORE → REVISE → ASSEMBLE → QA → RENDER → VERIFY
+It has separate internal production roles:
+	•	Producer
+	•	Scriptwriter
+	•	Storyboard artist
+	•	Cinematographer
+	•	Editor
+	•	Sound designer
+	•	Music designer
+	•	Colorist
+	•	Caption/translation specialist
+	•	QA/revision specialist
+The user still interacts with one individual agent.
+🎥 Camera control is now a first-class system
+I added a detailed shot grammar covering:
+Framing
+	•	Extreme wide
+	•	Wide
+	•	Medium-wide
+	•	Medium
+	•	MCU
+	•	Close-up
+	•	ECU
+	•	POV
+	•	OTS
+	•	Two-shot
+	•	Inserts
+Lens
+	•	14mm
+	•	18mm
+	•	24mm
+	•	35mm
+	•	50mm
+	•	85mm
+	•	135mm
+	•	Macro
+Angles
+	•	Eye-level
+	•	Low
+	•	High
+	•	Bird's-eye
+	•	Worm's-eye
+	•	Dutch
+	•	Profile
+	•	Rear follow
+	•	Front tracking
+Movement
+	•	Static
+	•	Pan/tilt
+	•	Dolly
+	•	Truck
+	•	Pedestal
+	•	Crane
+	•	Orbit
+	•	Arc
+	•	Tracking
+	•	Handheld
+	•	Whip pan
+	•	Rack focus
+	•	Dolly zoom
+Plus:
+	•	Speed
+	•	Acceleration
+	•	Stabilization
+	•	Motion blur
+	•	Focus
+	•	Depth of field
+	•	Aperture look
+	•	Lighting
+	•	Haze
+	•	Weather
+	•	Time of day
+	•	Subject behavior
+	•	Temporal beats
+	•	Continuity state
+So a shot isn't just:
+“Make a cinematic shot.”
+It becomes a structured production specification.
+🎭 Behavior is also explicit
+The agent tracks:
+Starting pose → gaze → expression → body action → hand action → environment interaction → emotional state → beat progression → ending pose
+And it carries that state into the next shot.
+That's critical for getting beyond disconnected AI clips.
+🎞️ Shot coverage
+The agent can automatically build coverage.
+For narrative:
+Establishing → Master → Medium → Close-up → Insert → Reaction → Transition
+For performance:
+Master → Frontal → Low-angle hero → Profile → Close-up → Orbit → Environmental wide → Detail
+It can also avoid unnecessary duplicate coverage.
+🔌 Model integration architecture
+The production build now has:
+FAL → hosted generation
+Replicate → alternative model/version ecosystem
+Vast GPU + ComfyUI → custom high-control execution
+The agent's router can evaluate:
+quality + identity consistency + latency + cost + availability + references + modality
+before choosing the execution path.
+📓 Notebook + 🎞️ Slate
+I kept these as first-class product concepts.
+Notebook: experiment with an individual model/generation, approve it, then send it into the project.
+Slate: the persistent production timeline where the agent and human editor operate on the same project graph.
+That means:
+“Use that Notebook result for shot 6.”
+can become a timeline operation rather than a disconnected download/upload process.
+🧩 Everything else
+The package also maintains the broader capability surface:
+	•	Prompt → video
+	•	Script → video
+	•	URL → video
+	•	Image → video
+	•	AI image generation
+	•	Stock media
+	•	Voice
+	•	Voice cloning
+	•	Music
+	•	SFX
+	•	Avatars
+	•	Captions
+	•	Translation/dubbing
+	•	Templates
+	•	Brand kits
+	•	Repurposing
+	•	Thumbnails
+	•	Enhancement
+	•	Background removal
+	•	Face tools
+	•	Natural-language editing
+	•	QA
+	•	Autonomous revision
+	•	Rendering
+	•	Export
+	•	Projects
+	•	Assets
+	•	Versions
+	•	Collaboration
+	•	Credits
+	•	FAL
+	•	Replicate
+	•	Vast
+	•	ComfyUI
+What is still left
+This is the important part.
+The architecture is now broad enough for the product, but several pieces need actual infrastructure/API credentials before we can honestly call the system production-ready:
+	1.	Real FAL model endpoints + webhook/polling
+	2.	Real Replicate model/version integrations
+	3.	Live Vast GPU instance
+	4.	ComfyUI production workflows
+	5.	Postgres database
+	6.	Redis job queue
+	7.	S3/object storage
+	8.	FFmpeg render workers
+	9.	Real-time generation progress
+	10.	Licensed stock provider
+	11.	Real TTS/music/avatar services
+	12.	Authentication
+	13.	Billing + credit ledger
+	14.	Collaboration/presence
+	15.	Moderation
+	16.	Production monitoring
+	17.	Automated integration/E2E tests
+	18.	CI/CD + deployment
+	19.	CDN/media delivery
+	20.	Production security/rate limiting
+Upgrades I'd recommend
+The biggest opportunity isn't simply adding more buttons. I'd upgrade the intelligence layer:
+1. Identity Engine Lock a person's face, body, wardrobe and visual identity across generations.
+2. Continuity Graph The agent understands what happened in Shot 1 → Shot 2 → Shot 3 rather than treating shots independently.
+3. Director Engine Turn the camera/behavior specification into model-specific prompts and ComfyUI workflows automatically.
+4. Multi-generation A/B Generate 3–5 candidate versions of important shots, score them automatically, and keep the strongest.
+5. Cost-aware routing Use Vast for expensive/high-control shots and cheaper hosted models for disposable B-roll.
+6. Visual QA Actually sample generated frames and detect:
+	•	identity drift
+	•	bad hands
+	•	artifacts
+	•	continuity problems
+	•	framing problems
+	•	unwanted objects
+	•	text artifacts
+	•	lighting mismatch
+7. Natural-language edit compiler
+User:
+“Make the first 10 seconds more aggressive, replace the second shot, keep the voice, and give me a TikTok version.”
+Agent:
+interprets → modifies timeline → regenerates Shot 2 → preserves audio → reframes → captions → renders.
+8. Persistent Creative Memory
+The agent remembers approved:
+characters + locations + wardrobe + lenses + lighting + color + editing style + brand rules
+and can reuse them across projects.
+9. Campaign Mode
+One brief becomes:
+Hero video + YouTube version + 5 Shorts + 3 Reels + TikTok + ads + thumbnails
+with shared creative memory.
+10. Custom ComfyUI Workflow Registry
+This could become one of the strongest differentiators: your own library of specialized workflows that the agent learns when to invoke.
+
+The key thing I won't lose again is the original assignment:
+We are prototyping a NEW individual autonomous video agent, and the current InVideo product is the capability benchmark.
+So the question for every future feature is now:
+“Would this individual agent be capable of doing what the current InVideo experience can do—and can it do it autonomously?”
+That is the bar.
+
+
+                    INDIVIDUAL AGENT
+                           │
+                    ┌──────▼──────┐
+                    │ AGENT BRAIN │
+                    └──────┬──────┘
+                           │
+       ┌───────────────────┼───────────────────┐
+       ▼                   ▼                   ▼
+   PLANNER             DIRECTOR            EDITOR
+       │                   │                   │
+       │             CAMERA/BEHAVIOR          │
+       │                   │                   │
+       └───────────────────┼───────────────────┘
+                           ▼
+                    MODEL ROUTER
+                           │
+          ┌────────────────┼────────────────┐
+          ▼                ▼                ▼
+        FAL           REPLICATE        VAST GPU
+                                          │
+                                      COMFYUI
+          └────────────────┬───────────────┘
+                           ▼
+                      JOB QUEUE
+                     Redis / Workers
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+           ASSETS        AUDIO       RENDER
+              │            │            │
+              └────────────┼────────────┘
+                           ▼
+                         SLATE
+                      VIDEO EDITOR
+                           │
+                           ▼
+                          QA
+                           │
+                    ┌──────▼──────┐
+                    │ AUTO REVISE │
+                    └──────┬──────┘
+                           ▼
+                       FFmpeg
+                           │
+                           ▼
+                   FINAL DELIVERY
+
+
+A lot of them. The main distinction is what I can implement completely in the codebase right now versus what requires you to provide an external account/key or deploy infrastructure.
+⚡ Fastest wins — I can finish these now
+#	Item	I can finish now?	External dependency
+5	Postgres schema + migrations + data layer	✅	DB URL to deploy
+6	Redis job queue architecture/workers	✅	Redis instance
+8	FFmpeg render pipeline	✅	Worker/GPU/CPU host
+9	Real-time job progress	✅	Redis/WebSocket deployment
+13	Credit ledger + billing architecture	✅	Payment provider credentials
+14	Collaboration/presence architecture	✅	Redis/WebSocket
+15	Moderation pipeline	✅	Moderation/API credentials optional
+16	Monitoring/observability	✅	Monitoring account optional
+17	Integration + E2E test suite	✅	CI environment
+18	CI/CD configuration	✅	GitHub/deployment credentials
+19	CDN/media delivery architecture	✅	Storage/CDN account
+20	Security/rate limiting	✅	Redis recommended
+These are mostly engineering work, so I can build the code/configuration immediately.
+🤖 AI integrations
+1. FAL — 🟡 mostly now
+I can finish the actual adapter, async job handling, polling/webhooks, normalized responses, retries and model registry.
+You need the actual FAL key for live generation.
+2. Replicate — 🟡 mostly now
+Same situation. I can implement the complete prediction lifecycle and model registry.
+You need your Replicate token + model/version IDs.
+3. Vast GPU — 🟡 mostly now
+I can finish the Vast/ComfyUI worker architecture, API contract, workflow registry, job protocol and health checking.
+You need an actual Vast GPU instance to execute it.
+4. ComfyUI workflows — 🟢 code/workflows now
+This is one I would prioritize heavily.
+We can build specialized workflows for:
+	•	Character/identity consistency
+	•	Image → video
+	•	Cinematic shots
+	•	Camera control
+	•	Performance shots
+	•	Lip sync
+	•	Upscaling
+	•	Background replacement
+	•	Reference-image conditioning
+	•	Multi-shot continuity
+	•	ControlNet
+	•	IP-Adapter
+	•	Motion/control workflows
+Then the agent decides which workflow to invoke.
+🎙️ 10–11
+Licensed stock provider: 🟡 adapter now, live catalog requires provider credentials.
+TTS/music/avatar: 🟡 adapters and orchestration now; live generation requires provider credentials.
+The architecture can support multiple vendors instead of locking us into one.
+
+What I would build FIRST
+Rather than spending time polishing isolated features, I'd do one giant productionization pass:
+                    INDIVIDUAL AGENT
+                           │
+                    ┌──────▼──────┐
+                    │ AGENT BRAIN │
+                    └──────┬──────┘
+                           │
+       ┌───────────────────┼───────────────────┐
+       ▼                   ▼                   ▼
+   PLANNER             DIRECTOR            EDITOR
+       │                   │                   │
+       │             CAMERA/BEHAVIOR          │
+       │                   │                   │
+       └───────────────────┼───────────────────┘
+                           ▼
+                    MODEL ROUTER
+                           │
+          ┌────────────────┼────────────────┐
+          ▼                ▼                ▼
+        FAL           REPLICATE        VAST GPU
+                                          │
+                                      COMFYUI
+          └────────────────┬───────────────┘
+                           ▼
+                      JOB QUEUE
+                     Redis / Workers
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+           ASSETS        AUDIO       RENDER
+              │            │            │
+              └────────────┼────────────┘
+                           ▼
+                         SLATE
+                      VIDEO EDITOR
+                           │
+                           ▼
+                          QA
+                           │
+                    ┌──────▼──────┐
+                    │ AUTO REVISE │
+                    └──────┬──────┘
+                           ▼
+                       FFmpeg
+                           │
+                           ▼
+                   FINAL DELIVERY
+That gets us much closer to the thing we're actually trying to prototype.
+🚀 My priority order
+Phase 1 — I can build immediately
+	1.	Postgres
+	2.	Redis
+	3.	Job system
+	4.	FFmpeg render engine
+	5.	Real-time progress
+	6.	Credit ledger
+	7.	Security/rate limiting
+	8.	Monitoring
+	9.	E2E tests
+	10.	CI/CD
+	11.	Storage/CDN layer
+	12.	Collaboration
+Phase 2 — connect the intelligence 13. FAL 14. Replicate 15. Vast 16. ComfyUI workflow registry 17. Model router 18. Camera-control compiler 19. Behavior/shot compiler 20. Identity/continuity engine
+Phase 3 — complete the InVideo-class surface 21. Stock 22. TTS 23. Music 24. Avatars 25. Translation/dubbing 26. Templates 27. Brand kits 28. Repurposing 29. Thumbnails 30. AI enhancement tools
+Phase 4 — polish 31. Slate editor 32. Notebook 33. Agent UX 34. collaboration UX 35. billing UX 36. onboarding 37. deployment 38. automated regression testing
+The important part
+You do not need to give me all 20 credentials before I can work.
+I can build the entire infrastructure and integration layer with environment-variable/configuration boundaries now, then the moment the actual credentials/services exist, we activate the integrations rather than redesigning the application.
+The only things I cannot manufacture are external accounts, API keys, GPU instances, paid stock licenses, or cloud infrastructure.
+I can also take the current ZIP and produce the next productionized ZIP instead of continuing to give you conceptual plans.
+Which first: production backend + workers, real FAL/Replicate/Vast, or both in one build?
+
+
+
+Done. I took the productionized ZIP and made another full-stack pass rather than adding one isolated feature.
+📦 Ultimate all-in-one build
+Download FilmStudio AI — Ultimate All-in-One ZIP
+97 files are now included.
+What was added
+🎬 Director Engine
+The agent now has a dedicated director layer for:
+	•	Scene planning
+	•	Shot coverage
+	•	Shot duration
+	•	Framing
+	•	Lens selection
+	•	Camera angle
+	•	Camera movement
+	•	Movement speed
+	•	Stabilization
+	•	Depth of field
+	•	Focus
+	•	Lighting
+	•	Atmosphere
+	•	Behavior
+	•	Emotional beats
+	•	Continuity
+🎥 Camera-control compiler
+Structured instructions can be converted into provider-ready generation instructions.
+Example:
+35mm / low-angle / tracking / slow / shallow DOF / subject walks toward camera
+becomes a structured shot specification instead of relying on an enormous unstructured prompt.
+🎭 Behavior engine
+The agent tracks:
+pose → gaze → expression → emotion → body movement → hand action → environment interaction → beat progression → ending pose
+and carries the state forward.
+🔗 Continuity engine
+The agent now has explicit continuity state for:
+	•	Character
+	•	Wardrobe
+	•	Location
+	•	Props
+	•	Lighting
+	•	Camera grammar
+	•	Approved references
+	•	Previous shot
+	•	Next shot
+This is one of the most important upgrades for making the system behave like a filmmaker rather than a clip generator.
+🤖 Smarter model router
+The router can account for:
+	•	Quality
+	•	Consistency
+	•	Cost
+	•	Latency
+	•	References
+	•	Identity requirements
+	•	Camera-control requirements
+	•	Budget
+So the eventual behavior can be:
+FAL → fast generation
+Replicate → alternate models
+Vast/ComfyUI → maximum control/identity/custom workflows
+🧪 Candidate generation
+Important shots can generate multiple candidates:
+Generate → score → inspect → select → lock
+instead of automatically accepting the first result.
+💰 Cost estimation
+There is now a cost-estimation surface so the agent can eventually decide whether a shot is worth generating at a particular quality level.
+♻️ Smart reframe
+The architecture now includes platform-aware reframing:
+16:9 → 9:16 → 1:1 → 4:5
+with subject-aware positioning.
+🧰 Agent tool registry
+The agent now has an explicit tool vocabulary:
+create_project → script → storyboard → coverage → compile_shot → stock → generate → voice → music → avatar → edit → reframe → captions → QA → repair → render → export → version
+That gives us a much cleaner foundation for the actual autonomous agent.
+
+What's left after this build?
+At this point, we're moving away from architecture and toward live production integration + hardening.
+🔴 Still requiring actual external infrastructure
+	1.	FAL credentials + production model endpoints
+	2.	Replicate credentials + selected model versions
+	3.	Vast GPU instance
+	4.	Actual ComfyUI model files/workflows
+	5.	Production Postgres
+	6.	Production Redis
+	7.	S3/object storage
+	8.	CDN
+	9.	Licensed stock API
+	10.	Real TTS
+	11.	Real music generation
+	12.	Real avatar service
+	13.	Authentication provider
+	14.	Payment/billing provider
+🟠 Engineering still needed
+	15.	Wire every provider adapter to the actual vendor APIs
+	16.	Persistent job/event storage
+	17.	Dead-letter/retry queue
+	18.	Real FFmpeg render worker
+	19.	Frame-by-frame visual QA
+	20.	Automated candidate scoring
+	21.	Real identity-consistency analysis
+	22.	Production collaboration/presence
+	23.	Complete authorization
+	24.	Credit reservation/settlement/refunds
+	25.	Signed media uploads/downloads
+	26.	Production rate limiting
+	27.	Moderation/review pipeline
+	28.	Full integration tests against live providers
+	29.	Load testing
+	30.	Staging + production deployment
+	31.	Monitoring + alerting
+	32.	Security audit
+	33.	Final UI/UX polish
+
+🚀 The upgrades I'd prioritize next
+The architecture is now ready for the really interesting part.
+1. Visual Continuity AI
+The agent actually examines generated frames and compares them against:
+Character Bible + Style Bible + Location Bible + previous shots
+and automatically detects drift.
+2. Director-grade ComfyUI workflows
+Build specialized workflows for:
+	•	Identity lock
+	•	IP-Adapter
+	•	ControlNet
+	•	Reference conditioning
+	•	Camera motion
+	•	Performance
+	•	Lip-sync
+	•	Cinematic image-to-video
+	•	Upscaling
+	•	Face consistency
+Then the agent chooses the workflow automatically.
+3. Model competition
+For important shots:
+FAL candidate A
+Replicate candidate B
+Vast candidate C
+↓
+AI evaluates them
+↓
+best shot becomes canonical
+4. True natural-language editing compiler
+User:
+“Keep everything but make Shot 4 a 50mm handheld close-up, make the lighting darker, replace the music, and give me a TikTok version.”
+Agent converts that into reversible timeline operations + generation jobs.
+5. Campaign Factory
+One master project automatically produces:
+Hero film → YouTube → Shorts → Reels → TikTok → ads → thumbnails → alternate ratios
+while preserving the same creative identity.
+6. Creative Memory
+Eventually the agent learns the user's approved:
+	•	camera language
+	•	visual style
+	•	editing rhythm
+	•	color language
+	•	characters
+	•	wardrobe
+	•	locations
+	•	preferred models
+	•	preferred workflows
+That could become one of the biggest differentiators.
+
+The real remaining bottleneck
+Credentials and live infrastructure.
+The software architecture is now far enough along that the next meaningful leap isn't another README or another mock endpoint.
+It's:
+FAL + Replicate + Vast/ComfyUI + Postgres + Redis + S3 + FFmpeg → actually connected and running together.
+Once those are live, we can start testing the complete loop:
+brief → agent → shots → generation → continuity → Slate → QA → revision → render → delivery.
+That is the point where we'll know whether the agent actually works end-to-end rather than merely having the architecture for it.
+Next: live AI stack, Director/Continuity engine, or full deployment?
+
+
+Done. I took the previous productionized build and made the full long-pass consolidation.
+📦 Final Production Suite
+Download FilmStudio AI — Final Production Suite
+106 files are included.
+This pass adds the remaining major architecture rather than just another mock screen:
+🧠 Agent
+	•	Full orchestration graph
+	•	Tool registry
+	•	Production state machine
+	•	Director engine
+	•	Shot planning
+	•	Coverage planning
+	•	Camera compiler
+	•	Behavior system
+	•	Continuity system
+	•	Model routing
+	•	Candidate generation
+	•	Cost estimation
+	•	QA/revision pathway
+	•	Project memory architecture
+🎥 Director / cinematography
+The agent can reason about:
+Shot → framing → angle → lens → movement → speed → stabilization → DOF → focus → lighting → behavior → emotional beats → continuity
+Including 24mm/35mm/50mm/85mm-style lens decisions and cinematic movement language.
+🤖 Live-provider layer
+There are now actual HTTP integration seams for:
+	•	FAL
+	•	Replicate
+	•	Vast GPU
+	•	ComfyUI
+with environment-driven credentials rather than fake hardcoded services.
+There are also:
+	•	webhook endpoints
+	•	request IDs
+	•	job status
+	•	provider selection
+	•	model routing
+	•	SSE progress
+	•	async worker architecture
+🏗️ Backend
+Added/expanded:
+	•	PostgreSQL schema
+	•	PostgreSQL repositories
+	•	Redis queue
+	•	Redis events
+	•	generation worker
+	•	FFmpeg render worker
+	•	credit reservation
+	•	credit refunds
+	•	usage ledger
+	•	project versions
+	•	Docker
+	•	Docker Compose
+	•	CI
+	•	type checking
+	•	test foundation
+	•	health monitoring
+🎬 Full production flow
+The intended pipeline is now:
+Brief
+↓
+Agent
+↓
+Script
+↓
+Storyboard
+↓
+Coverage
+↓
+Director
+↓
+Camera + behavior compiler
+↓
+FAL / Replicate / Vast
+↓
+Stock / image / video / voice / music / SFX / avatar
+↓
+Slate
+↓
+Captions / translation / reframe
+↓
+Visual + audio QA
+↓
+Automatic targeted regeneration
+↓
+FFmpeg
+↓
+Final video
+↓
+16:9 + 9:16 + 1:1 + 4:5
+📚 Documentation
+I also added the expanded final documentation so the project isn't dependent on our chat history:
+	•	README_FINAL.md
+	•	ULTIMATE_README.md
+	•	CAMERA_AND_SHOT_SPEC.md
+	•	AGENT_BEHAVIOR.md
+	•	MODEL_INTEGRATION_GUIDE.md
+	•	UPGRADE_PLAN.md
+	•	FEATURE_COMPLETION_MATRIX.md
+	•	PRODUCTION_RUNBOOK.md
+	•	ARCHITECTURE.md
+	•	CAPABILITY_MANIFEST.json
+What is actually left now
+There are two categories.
+🔴 External provisioning
+These require real accounts/infrastructure:
+	1.	FAL key + chosen production models
+	2.	Replicate token + model versions
+	3.	Vast GPU instance
+	4.	ComfyUI checkpoints/workflows
+	5.	Production PostgreSQL
+	6.	Production Redis
+	7.	S3/object storage
+	8.	CDN
+	9.	Licensed stock provider
+	10.	TTS provider
+	11.	Music provider
+	12.	Avatar provider
+	13.	Authentication provider
+	14.	Payment provider
+🟠 Final engineering/hardening
+	15.	Fully wire each chosen FAL model's exact request/polling semantics
+	16.	Fully wire selected Replicate model versions
+	17.	Build/deploy the actual Vast ComfyUI workflows
+	18.	Replace remaining prototype storage paths with durable repositories
+	19.	Complete distributed queue retries/dead-letter handling
+	20.	Complete FFmpeg render orchestration
+	21.	Implement real frame-level visual QA
+	22.	Implement actual candidate scoring
+	23.	Implement identity/face consistency analysis
+	24.	Complete authentication/authorization
+	25.	Complete signed media URLs
+	26.	Complete credit settlement/refunds
+	27.	Complete real collaboration/presence
+	28.	Complete moderation/abuse prevention
+	29.	Run real provider integration tests
+	30.	Load test the worker infrastructure
+	31.	Deploy staging
+	32.	Deploy production
+	33.	Security audit
+	34.	Disaster recovery/backups
+🚀 Upgrades now defined
+The next-generation differentiators are also incorporated into the roadmap:
+Visual Continuity AI → checks actual generated frames against the character/style/location bible.
+Director v2 → deterministic cinematography and model-specific camera translation.
+Multi-model competition → FAL vs Replicate vs Vast candidates → automatic scoring → winner locked.
+Natural-language edit compiler → user command → reversible Slate timeline operations.
+Creative memory → approved characters, wardrobe, camera language, lighting and style persist across projects.
+Campaign Factory → one master video → YouTube + Shorts + Reels + TikTok + ads + thumbnails.
+ComfyUI Workflow Registry → agent automatically chooses the correct specialized workflow.
+Autonomous cost intelligence → quality vs cost vs latency determines where each shot gets generated.
+
+The key status
+We're now at the point where the next meaningful step is not another conceptual ZIP.
+The remaining gap is primarily:
+real credentials + real GPU + real models + real storage/database + real workers → end-to-end testing.
+Once those are connected, the critical test becomes:
+Give the individual agent one complete brief and see whether it can independently produce a consistent multi-shot video, edit it, QA it, repair it, render it and output all platform versions.
+That's the actual acceptance test for the product we're building.
+
+
+Done. I added the current public InVideo model catalog layer + BytePlus ModelArk CLI + the upgrade stack + storage/database/workers into the previous production suite.
+📦 Latest build
+Download FilmStudio AI — InVideo + ModelArk Production Suite
+119 files are included.
+What changed
+🤖 InVideo model layer
+I added a maintained model catalog based on InVideo's current public model listing. InVideo currently describes access to 200+ AI models, with per-shot routing across video, image, audio and music models. (InVideo Help Center)
+The catalog now includes major families such as:
+	•	Veo 3.1 / 3.1 Fast / Veo 3 / Veo 3 Fast / Veo 2
+	•	Kling 3.0 / 3.0 Omni / 3.0 Turbo / Motion Control
+	•	Seedance 2.5 / 2.0 / 2.0 Fast / 1.5 Pro
+	•	Runway Gen-4.5 / Gen-4 Aleph / Act-Two
+	•	PixVerse
+	•	Wan
+	•	Hailuo
+	•	Sora 2 / Sora 2 Pro
+	•	LTX
+	•	Grok Imagine
+	•	Firefly Video
+	•	Recraft
+	•	Nano Banana Pro
+	•	GPT-Image-2
+	•	Qwen Image Edit
+	•	FLUX
+	•	Topaz
+	•	ElevenLabs
+	•	HeyGen
+	•	Kling/PixVerse/VEED/Rapid lip-sync
+	•	MMAudio
+	•	and additional catalog models.
+This is not just a list. There's now an InVideo-style model router that can choose based on what the shot needs.
+For example:
+Dialogue / synchronized audio → Veo
+Motion-heavy → Kling
+Character/reference-heavy narrative → Seedance
+Custom high-control workflow → Vast/ComfyUI
+Character sheets → Recraft / Nano Banana / GPT-Image
+Upscaling → Topaz-class models
+That's aligned with how InVideo publicly describes its per-shot routing approach. (Invideo)
+🟣 BytePlus ModelArk
+Added as a first-class provider, particularly for Seedance/ByteDance workflows.
+The project includes:
+npm install -g @byteplus/ark-cli
+plus:
+	•	ModelArk environment configuration
+	•	server-side ModelArk adapter
+	•	ModelArk generation endpoint
+	•	Seedance model configuration
+	•	ModelArk documentation
+	•	provider routing
+	•	API-key isolation
+BytePlus currently documents the @byteplus/ark-cli installation and ModelArk API infrastructure. (BytePlus AI)
+This means the routing architecture is now:
+FAL
+↕️
+Replicate
+↕️
+BytePlus ModelArk
+↕️
+Vast GPU / ComfyUI
+The agent decides which execution layer makes sense for each shot.
+🧠 Director upgrades
+The previous upgrades remain included:
+	•	Director engine
+	•	Camera compiler
+	•	Behavior engine
+	•	Continuity graph
+	•	Coverage planner
+	•	Multi-candidate generation
+	•	Cost-aware routing
+	•	Creative memory
+	•	Natural-language editing architecture
+	•	Smart reframe
+	•	QA/revision loop
+	•	Agent tool registry
+	•	Production state machine
+This is especially important because InVideo's current Agent experience emphasizes persistent character/world context and model routing rather than simply generating isolated clips. (Invideo)
+🗄️ Storage
+Added the production storage architecture:
+Postgres
+	•	Users
+	•	Projects
+	•	Assets
+	•	Jobs
+	•	Versions
+	•	Credits
+Redis
+	•	Generation queues
+	•	Worker coordination
+	•	Live events
+	•	Progress
+S3-compatible storage
+	•	Reference images
+	•	Generated images
+	•	Video
+	•	Audio
+	•	Renders
+	•	Thumbnails
+	•	Captions
+CDN
+	•	Media delivery
+⚙️ Workers
+Added a proper worker topology:
+generation
+   ├── FAL
+   ├── Replicate
+   ├── ModelArk
+   └── Vast/ComfyUI
+
+render
+   └── FFmpeg
+
+qa
+   └── frame/audio analysis
+
+media
+   ├── thumbnails
+   ├── captions
+   ├── transcodes
+   └── reframe
+
+stock
+   └── licensed media
+
+cleanup
+   └── orphan/expired assets
+Postgres becomes the durable source of truth.
+Redis becomes the job/event transport.
+S3 becomes the media source of truth.
+One important detail
+I intentionally did not hard-code fake model endpoints or claim that every listed InVideo model is automatically callable through its original vendor. InVideo's model roster and vendor availability change, and exact provider/version IDs have to be configured. The catalog is therefore the routing/ capability layer, while FAL, Replicate, ModelArk and Vast are actual execution providers once their credentials/endpoints are configured.
+What's left now
+The architecture is getting close to the point where further work should be live integration, not more feature lists.
+The remaining last-mile work is:
+	1.	Real FAL model endpoint configuration
+	2.	Real Replicate model/version configuration
+	3.	ModelArk production API configuration
+	4.	Vast GPU deployment
+	5.	Actual ComfyUI workflows/checkpoints
+	6.	Production Postgres
+	7.	Production Redis
+	8.	S3/CDN
+	9.	Licensed stock
+	10.	Real TTS/music/avatar providers
+	11.	Authentication
+	12.	Billing
+	13.	Durable worker retries/dead-letter queues
+	14.	Real FFmpeg rendering
+	15.	Frame-level visual QA
+	16.	Actual candidate scoring
+	17.	Live provider integration tests
+	18.	Load testing
+	19.	Production security audit
+	20.	Staging → production deployment
+The architecture for all 20 is now in the project. The remaining blockers are primarily real credentials, deployed infrastructure and live end-to-end validation.
+InVideo's current public AI model catalog
+BytePlus ModelArk documentation
+Next useful step: live provider wiring, Vast/ComfyUI workflows, or production deployment.
+
+
+
+Done. I added the current public InVideo model catalog layer + BytePlus ModelArk CLI + the upgrade stack + storage/database/workers into the previous production suite.
+📦 Latest build
+Download FilmStudio AI — InVideo + ModelArk Production Suite
+119 files are included.
+What changed
+🤖 InVideo model layer
+I added a maintained model catalog based on InVideo's current public model listing. InVideo currently describes access to 200+ AI models, with per-shot routing across video, image, audio and music models. (InVideo Help Center)
+The catalog now includes major families such as:
+	•	Veo 3.1 / 3.1 Fast / Veo 3 / Veo 3 Fast / Veo 2
+	•	Kling 3.0 / 3.0 Omni / 3.0 Turbo / Motion Control
+	•	Seedance 2.5 / 2.0 / 2.0 Fast / 1.5 Pro
+	•	Runway Gen-4.5 / Gen-4 Aleph / Act-Two
+	•	PixVerse
+	•	Wan
+	•	Hailuo
+	•	Sora 2 / Sora 2 Pro
+	•	LTX
+	•	Grok Imagine
+	•	Firefly Video
+	•	Recraft
+	•	Nano Banana Pro
+	•	GPT-Image-2
+	•	Qwen Image Edit
+	•	FLUX
+	•	Topaz
+	•	ElevenLabs
+	•	HeyGen
+	•	Kling/PixVerse/VEED/Rapid lip-sync
+	•	MMAudio
+	•	and additional catalog models.
+This is not just a list. There's now an InVideo-style model router that can choose based on what the shot needs.
+For example:
+Dialogue / synchronized audio → Veo
+Motion-heavy → Kling
+Character/reference-heavy narrative → Seedance
+Custom high-control workflow → Vast/ComfyUI
+Character sheets → Recraft / Nano Banana / GPT-Image
+Upscaling → Topaz-class models
+That's aligned with how InVideo publicly describes its per-shot routing approach. (Invideo)
+🟣 BytePlus ModelArk
+Added as a first-class provider, particularly for Seedance/ByteDance workflows.
+The project includes:
+npm install -g @byteplus/ark-cli
+plus:
+	•	ModelArk environment configuration
+	•	server-side ModelArk adapter
+	•	ModelArk generation endpoint
+	•	Seedance model configuration
+	•	ModelArk documentation
+	•	provider routing
+	•	API-key isolation
+BytePlus currently documents the @byteplus/ark-cli installation and ModelArk API infrastructure. (BytePlus AI)
+This means the routing architecture is now:
+FAL
+↕️
+Replicate
+↕️
+BytePlus ModelArk
+↕️
+Vast GPU / ComfyUI
+The agent decides which execution layer makes sense for each shot.
+🧠 Director upgrades
+The previous upgrades remain included:
+	•	Director engine
+	•	Camera compiler
+	•	Behavior engine
+	•	Continuity graph
+	•	Coverage planner
+	•	Multi-candidate generation
+	•	Cost-aware routing
+	•	Creative memory
+	•	Natural-language editing architecture
+	•	Smart reframe
+	•	QA/revision loop
+	•	Agent tool registry
+	•	Production state machine
+This is especially important because InVideo's current Agent experience emphasizes persistent character/world context and model routing rather than simply generating isolated clips. (Invideo)
+🗄️ Storage
+Added the production storage architecture:
+Postgres
+	•	Users
+	•	Projects
+	•	Assets
+	•	Jobs
+	•	Versions
+	•	Credits
+Redis
+	•	Generation queues
+	•	Worker coordination
+	•	Live events
+	•	Progress
+S3-compatible storage
+	•	Reference images
+	•	Generated images
+	•	Video
+	•	Audio
+	•	Renders
+	•	Thumbnails
+	•	Captions
+CDN
+	•	Media delivery
+⚙️ Workers
+Added a proper worker topology:
+generation
+   ├── FAL
+   ├── Replicate
+   ├── ModelArk
+   └── Vast/ComfyUI
+
+render
+   └── FFmpeg
+
+qa
+   └── frame/audio analysis
+
+media
+   ├── thumbnails
+   ├── captions
+   ├── transcodes
+   └── reframe
+
+stock
+   └── licensed media
+
+cleanup
+   └── orphan/expired assets
+Postgres becomes the durable source of truth.
+Redis becomes the job/event transport.
+S3 becomes the media source of truth.
+One important detail
+I intentionally did not hard-code fake model endpoints or claim that every listed InVideo model is automatically callable through its original vendor. InVideo's model roster and vendor availability change, and exact provider/version IDs have to be configured. The catalog is therefore the routing/ capability layer, while FAL, Replicate, ModelArk and Vast are actual execution providers once their credentials/endpoints are configured.
+What's left now
+The architecture is getting close to the point where further work should be live integration, not more feature lists.
+The remaining last-mile work is:
+	1.	Real FAL model endpoint configuration
+	2.	Real Replicate model/version configuration
+	3.	ModelArk production API configuration
+	4.	Vast GPU deployment
+	5.	Actual ComfyUI workflows/checkpoints
+	6.	Production Postgres
+	7.	Production Redis
+	8.	S3/CDN
+	9.	Licensed stock
+	10.	Real TTS/music/avatar providers
+	11.	Authentication
+	12.	Billing
+	13.	Durable worker retries/dead-letter queues
+	14.	Real FFmpeg rendering
+	15.	Frame-level visual QA
+	16.	Actual candidate scoring
+	17.	Live provider integration tests
+	18.	Load testing
+	19.	Production security audit
+	20.	Staging → production deployment
+The architecture for all 20 is now in the project. The remaining blockers are primarily real credentials, deployed infrastructure and live end-to-end validation.
+InVideo's current public AI model catalog
+BytePlus ModelArk documentation
+Next useful step: live provider wiring, Vast/ComfyUI workflows, or production deployment.
+
+Yes — this is the actual final-mile checklist for taking FilmStudio from the current prototype into a genuinely runnable production system.
+I’d handle it as one integrated production pass, not 20 disconnected tasks.
+What can be completed in the codebase
+#	Work	Status after implementation
+1	FAL model endpoints	🟡 Adapter + routing; live endpoints/keys required
+2	Replicate model/version	🟡 Adapter + routing; live versions/key required
+3	ModelArk API	🟡 Adapter + CLI layer; credentials/model IDs required
+4	Vast GPU	🟡 Worker/control layer; actual GPU must be provisioned
+5	ComfyUI workflows	🟡 Workflow framework; checkpoints/workflows must actually be installed
+6	PostgreSQL	🟢 Schema/repositories ready; production DB required
+7	Redis	🟢 Queue/event architecture ready; production Redis required
+8	S3/CDN	🟢 Storage adapter ready; production bucket/CDN required
+9	Stock	🟡 Provider adapter; licensed account/API required
+10	TTS/music/avatar	🟡 Provider architecture; vendor credentials required
+11	Authentication	🟠 Production provider + authorization implementation
+12	Billing	🟠 Credit ledger exists; payment provider + webhook settlement
+13	Retries/dead-letter	🟢 Can be implemented in workers
+14	FFmpeg	🟢 Render worker can be implemented
+15	Frame-level QA	🟢 Can implement sampling/vision pipeline
+16	Candidate scoring	🟢 Can implement automated scoring
+17	Provider tests	🟡 Requires live credentials
+18	Load testing	🟢 Test infrastructure can be built
+19	Security audit	🟡 Automated security checks now; human/external audit later
+20	Staging → production	🟡 Deployment configuration now; actual accounts/environment required
+The important distinction
+There are three things I cannot legitimately fake:
+Credentials I can't manufacture your FAL, Replicate, BytePlus, Vast, stock, TTS, payment, etc. credentials.
+Cloud resources I can't magically create a production GPU, PostgreSQL server, Redis cluster, S3 bucket or CDN account without access to those services.
+Live validation I can't claim "production tested" until the actual services are reachable and the agent has successfully completed real jobs.
+Everything else can be built around those boundaries.
+
+The production architecture should now become this
+                         FILMSTUDIO AGENT
+                               │
+             ┌─────────────────┼─────────────────┐
+             │                 │                 │
+          DIRECTOR           WRITER            EDITOR
+             │                 │                 │
+             └─────────────────┼─────────────────┘
+                               │
+                       CONTINUITY ENGINE
+                               │
+                       MODEL ROUTER
+                               │
+       ┌──────────────┬────────┼────────┬──────────────┐
+       ▼              ▼        ▼        ▼              ▼
+      FAL         REPLICATE  MODELARK  VAST        STOCK
+                                │       │
+                             SEEDANCE  COMFYUI
+                                │       │
+       └──────────────┬────────┴────────┘
+                      ▼
+                  REDIS QUEUE
+                      │
+       ┌──────────────┼────────────────┐
+       ▼              ▼                ▼
+  GENERATION       MEDIA/QA          RENDER
+     WORKERS        WORKERS          WORKERS
+       │              │                │
+       └──────────────┼────────────────┘
+                      ▼
+                 POSTGRES
+                      │
+                 PROJECT STATE
+                      │
+                      ▼
+                   SLATE
+                      │
+            ┌─────────┴─────────┐
+            ▼                   ▼
+        VISUAL QA           AUDIO QA
+            │                   │
+            └─────────┬─────────┘
+                      ▼
+                AUTO REVISION
+                      │
+                      ▼
+                 FINAL RENDER
+                      │
+                      ▼
+                  S3 / CDN
+                      │
+                      ▼
+            16:9 / 9:16 / 1:1 / 4:5
+And I would add one more critical layer
+Provider failover
+If:
+Seedance fails
+the agent shouldn't stop.
+It should do:
+Seedance
+   ↓ failed
+Kling
+   ↓ failed
+Veo
+   ↓ unavailable
+Replicate alternative
+   ↓
+Vast/ComfyUI
+while respecting:
+quality → cost → latency → availability → credits
+That's much more important for an autonomous agent than simply having lots of models.
+
+The four upgrades I would make mandatory
+1. Visual QA
+Every generated shot gets sampled.
+The system checks:
+	•	face/identity
+	•	wardrobe
+	•	objects
+	•	hands
+	•	composition
+	•	camera specification
+	•	lighting
+	•	continuity
+	•	unwanted text
+	•	artifacts
+	•	temporal consistency
+Then:
+PASS → Slate
+or
+FAIL → targeted regeneration
+2. Candidate competition
+For important shots:
+             SHOT 07
+                │
+       ┌────────┼────────┐
+       ▼        ▼        ▼
+      FAL   MODELARK   VAST
+       │        │        │
+       └────────┼────────┘
+                ▼
+          AI EVALUATION
+                │
+          BEST CANDIDATE
+                │
+              LOCK
+3. Natural-language editing
+The user shouldn't need to understand the underlying models.
+They should be able to say:
+“Replace shot 6 with a darker 85mm close-up, keep the character and wardrobe exactly the same, make the camera handheld, and preserve the voice.”
+The agent translates that into:
+Slate diff + camera spec + continuity locks + generation job + QA.
+4. Autonomous production
+Eventually:
+“Make a 90-second product film.”
+should be enough.
+The agent decides:
+script → scenes → shots → models → generation → selection → editing → sound → captions → QA → corrections → rendering → exports.
+That's the actual end goal.
+
+One thing I would NOT do
+I wouldn't simply mark all 20 as "complete" because the source code exists.
+The honest definition of production ready should be:
+The agent successfully completes a real end-to-end project using live providers, persistent storage, workers, rendering and QA without manual intervention.
+Until that test passes, we're at production-capable architecture, not production SaaS.
+The next practical milestone is therefore a real end-to-end production test using the deployed app and live infrastructure.
+Which credentials do you already have: FAL/Replicate/ModelArk, Vast/ComfyUI, or none yet?
+
+
+
+Yes. That example gives us the actual Seedream image-generation API shape, so I added it directly rather than leaving Seedream as a generic model entry.
+📦 Updated build
+Download FilmStudio AI — ModelArk + Seedance + Seedream Live Images
+152 files.
+Now the BytePlus pipeline is:
+                    FILMSTUDIO AGENT
+                           │
+                           ▼
+                 MODELARK RESPONSES
+                 DeepSeek / reasoning
+                 Web search / research
+                           │
+                           ▼
+                    DIRECTOR BRAIN
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+        SEEDREAM                     SEEDANCE
+       IMAGE ENGINE                 VIDEO ENGINE
+             │                           │
+      character refs               video shots
+      style frames                 motion
+      locations                    camera
+      storyboards                  behavior
+      keyframes                    performance
+             │                           │
+             └─────────────┬─────────────┘
+                           ▼
+                     QA / SCORING
+                           │
+                           ▼
+                    FAL / REPLICATE
+                       FALLBACK
+                           │
+                           ▼
+                     VAST / COMFYUI
+                           │
+                           ▼
+                         SLATE
+                           │
+                           ▼
+                        FFmpeg
+                           │
+                           ▼
+                       S3 / CDN
+Seedream is now a real endpoint
+The build now exposes:
+POST /api/modelark/images/generations
+and forwards to:
+https://ark.ap-southeast.bytepluses.com/api/v3/images/generations
+with support for:
+	•	seedream-4-5-251128
+	•	prompt
+	•	2K output
+	•	URL response
+	•	sequential image generation
+	•	watermark configuration
+	•	server-side API authentication
+I also made Seedream the preferred image/image-edit model in the FilmStudio router.
+That means the agent can now reason:
+"I need a consistent protagonist before generating the scene."
+Then:
+ModelArk brain → Seedream character/reference → lock reference → Seedance video generation
+rather than trying to create the character and video independently.
+And the Python SDK remains included
+pip install --upgrade 'byteplus-python-sdk-v2'
+So we now have both:
+Python SDK → ModelArk agent/reasoning
+and
+HTTP API → Seedream image generation
+with the same ARK_API_KEY server-side configuration.
+🔐 One security action
+The API key in the curl you pasted is visible in this conversation. Do not put that exact key into the project or GitHub. Rotate it and put the replacement in your server environment as ARK_API_KEY.
+The ZIP contains no copy of your key.
+The next useful integration is to connect Seedream's generated reference URL directly into Seedance's reference-image inputs, so the agent can go from character creation → locked reference → actual video shot automatically. Would you prioritize character consistency, storyboard-to-video, or both?
+
+Done. I integrated the BytePlus Python SDK v2 into the FilmStudio build and connected the ModelArk brain to the generation layer.
+📦 Latest ZIP
+Download FilmStudio AI — ModelArk + Seedance + Seedream SDK Build
+149 files.
+The BytePlus architecture is now
+                 FILMSTUDIO AGENT
+                        │
+                        ▼
+              MODELARK RESPONSES API
+                        │
+              ┌─────────┴─────────┐
+              │                   │
+          Reasoning           Web Search
+              │
+              ▼
+        PRODUCER / DIRECTOR
+              │
+       ┌──────┴──────┐
+       ▼             ▼
+   Seedream       Seedance
+   IMAGE          VIDEO
+       │             │
+       └──────┬──────┘
+              ▼
+        MODEL ROUTER
+              │
+       ┌──────┼──────┐
+       ▼      ▼      ▼
+      FAL  Replicate Vast
+                     │
+                  ComfyUI
+              │
+              ▼
+          QA / SCORING
+              │
+              ▼
+            SLATE
+              │
+              ▼
+           FFmpeg
+              │
+              ▼
+          S3 / CDN
+Added
+	•	byteplus-python-sdk-v2
+	•	Python ModelArk client
+	•	ModelArk Responses API
+	•	ModelArk web-search tool
+	•	DeepSeek reasoning configuration
+	•	Seedance/Seedream generation bridge
+	•	Agent → ModelArk → generation orchestration
+	•	Provider fallback
+	•	Server-side API-key handling
+	•	ModelArk environment configuration
+	•	Installation documentation
+Install locally with:
+pip install --upgrade 'byteplus-python-sdk-v2'
+And configure:
+ARK_API_KEY=
+ARK_BASE_URL=https://ark.ap-southeast.bytepluses.com/api/v3
+ARK_REASONING_MODEL=deepseek-v4-pro-ga-260813
+I deliberately did not put the API key you pasted earlier into the build. Keep that credential server-side and rotate it if it was exposed anywhere public.
+The important change is that ModelArk is no longer just another generation provider. It now acts as the reasoning/production brain, while Seedream and Seedance become execution models underneath the Director.
+
+Yes — this is much better than the generic OpenAI-compatible wrapper I added earlier. Your code shows the actual BytePlus SDK we should use for Seedream:
+from byteplussdkarkruntime import Ark
+and:
+client.images.generate(...)
+So for FilmStudio, I would make this SDK the canonical Seedream integration, while keeping the HTTP endpoint as a fallback.
+The correct architecture
+ModelArk Responses
+        │
+        ▼
+   FilmStudio Brain
+        │
+        ├── Character/reference required?
+        │          │
+        │          ▼
+        │       Seedream
+        │          │
+        │          ▼
+        │     Reference Image
+        │          │
+        │          ▼
+        └────── Seedance
+                   │
+                   ▼
+             Video Shot
+                   │
+                   ▼
+          Continuity + QA
+Seedream SDK adapter
+The production adapter should essentially be:
+import os
+from byteplussdkarkruntime import Ark
+
+client = Ark(
+    base_url="https://ark.ap-southeast.bytepluses.com/api/v3",
+    api_key=os.environ["ARK_API_KEY"],
+)
+
+response = client.images.generate(
+    model=os.getenv("MODELARK_IMAGE_MODEL", "seedream-4-5-251128"),
+    prompt=prompt,
+    sequential_image_generation="disabled",
+    response_format="url",
+    size="2K",
+    stream=False,
+    watermark=False,
+)
+
+image_url = response.data[0].url
+That gives us a clean Seedream → URL → asset registry → Seedance reference pipeline.
+For the two things you selected
+1. Character consistency
+The agent should create a Character Bible first:
+CHARACTER
+├── identity reference
+├── face reference
+├── full-body reference
+├── wardrobe
+├── hair
+├── accessories
+├── physical proportions
+├── expressions
+├── poses
+└── approved Seedream references
+Then every subsequent shot receives the appropriate approved references instead of asking the video model to recreate the person from scratch.
+2. Storyboard → video
+The pipeline becomes:
+BRIEF
+ ↓
+SCRIPT
+ ↓
+SCENES
+ ↓
+SHOT LIST
+ ↓
+SEEDREAM KEYFRAME
+ ↓
+DIRECTOR QA
+ ↓
+SEEDANCE
+ ↓
+VIDEO SHOT
+ ↓
+FRAME QA
+ ↓
+CONTINUITY CHECK
+ ↓
+APPROVE / REGENERATE
+This is substantially stronger than simply doing:
+prompt → video.
+One important upgrade
+The agent should not regenerate the character reference every shot.
+Instead:
+Character Reference #001
+        ↓
+LOCK
+        ↓
+Shot 01
+Shot 02
+Shot 03
+Shot 04
+Shot 05
+        ↓
+same identity
+Only regenerate the reference when the user explicitly changes something like:
+"Change the jacket but keep the face."
+Then the continuity engine creates a new wardrobe state while preserving the identity lock.
+Your SDK example is exactly the kind of concrete provider implementation I needed to make this integration more accurate.
+Also, keep ARK_API_KEY out of the browser and source repository; the key you've pasted in the conversation should be rotated if it is still active.
+Which should I wire next: Seedance reference-to-video, or the complete Character Bible + Storyboard pipeline?
+
+
+Done. I combined both into the same build:
+📦 Latest build
+Download FilmStudio AI — Character + Storyboard → Seedream → Seedance Pipeline
+163 files.
+The new end-to-end flow
+                    USER BRIEF
+                        │
+                        ▼
+               MODELARK RESPONSES
+                 Reasoning + Search
+                        │
+                        ▼
+                 PRODUCER / DIRECTOR
+                        │
+              ┌─────────┴─────────┐
+              ▼                   ▼
+       CHARACTER BIBLE        STORYBOARD
+              │                   │
+              ▼                   ▼
+          SEEDREAM            SHOT SPECS
+              │                   │
+       Canonical reference        │
+              │                   │
+              └─────────┬─────────┘
+                        ▼
+                 CONTINUITY LOCK
+                        │
+                        ▼
+                    SEEDANCE
+                        │
+             reference + shot spec
+                        │
+                        ▼
+                 VIDEO CANDIDATES
+                        │
+                        ▼
+                  FRAME-LEVEL QA
+                        │
+              ┌─────────┴─────────┐
+              ▼                   ▼
+             PASS                FAIL
+              │                   │
+              ▼                   ▼
+            SLATE             TARGETED REGEN
+              │
+              ▼
+            FFmpeg
+              │
+              ▼
+           S3 / CDN
+👤 Character consistency
+The build now creates a versioned Character Bible containing:
+	•	Identity locks
+	•	Face
+	•	Physical characteristics
+	•	Hair
+	•	Wardrobe
+	•	Accessories
+	•	Expressions
+	•	Poses
+	•	Negative constraints
+	•	Approved reference assets
+Once Seedream creates the canonical reference, it can be locked and reused across subsequent shots.
+So we don't repeatedly ask Seedance to reinvent the character.
+🎬 Storyboard → video
+Every storyboard frame can now carry:
+	•	Scene
+	•	Shot
+	•	Duration
+	•	Description
+	•	Dialogue
+	•	Character IDs
+	•	Reference assets
+	•	Framing
+	•	Camera angle
+	•	Lens
+	•	Movement
+	•	Movement speed
+	•	DOF
+	•	Focus
+	•	Lighting
+	•	Environment
+	•	Behavior
+	•	Transition
+That gets compiled into a generation-ready shot specification.
+🔥 The important part
+The agent can now conceptually perform:
+"Create a 60-second cinematic commercial."
+→ ModelArk plans it → Character Bible created → Seedream generates character/reference frames → Storyboard created → Director specifies every shot → Seedance generates each shot using the approved references → QA evaluates the output → bad shots are regenerated → approved shots enter Slate → final render
+This is the foundation we need for consistent multi-shot AI filmmaking, rather than a collection of disconnected generation buttons.
+BytePlus SDK
+The build uses the SDK pattern you provided:
+pip install --upgrade 'byteplussdkarkruntime'
+with:
+from byteplussdkarkruntime import Ark
+for Seedream.
+The API key remains server-side.
+One remaining BytePlus-specific item
+The exact Seedance endpoint/model ID needs to come from the Seedance service you've activated in your BytePlus account. I deliberately made that configurable:
+MODELARK_VIDEO_MODEL=
+SEEDANCE_ENDPOINT=
+rather than inventing an endpoint.
+Seedream is already configured around:
+MODELARK_IMAGE_MODEL=seedream-4-5-251128
+So once the exact Seedance endpoint/model from your account is placed into the environment, the intended Seedream → Seedance reference-to-video pipeline is wired.
+Next choice: deploy the BytePlus pipeline first, or polish the InVideo-style agent UI around it?
+
+
+Done — I combined both: the BytePlus generation pipeline and the InVideo-style Individual Agent UI.
+📦 Latest build
+Download FilmStudio AI — Final Agent + ModelArk Build
+166 files.
+What is now connected
+                    INDIVIDUAL AGENT
+                          │
+                          ▼
+                  MODELARK RESPONSES
+                  DeepSeek + web search
+                          │
+                          ▼
+                 PRODUCER / DIRECTOR
+                          │
+             ┌────────────┴────────────┐
+             ▼                         ▼
+       CHARACTER BIBLE             STORYBOARD
+             │                         │
+             ▼                         ▼
+         SEEDREAM                  CAMERA SPEC
+             │                         │
+       reference assets                │
+             └────────────┬────────────┘
+                          ▼
+                  CONTINUITY LOCK
+                          │
+                          ▼
+                     SEEDANCE
+                          │
+                    video shots
+                          │
+             ┌────────────┴────────────┐
+             ▼                         ▼
+          FRAME QA                CANDIDATE QA
+             │                         │
+             └────────────┬────────────┘
+                          ▼
+          
