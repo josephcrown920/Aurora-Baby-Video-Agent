@@ -55,7 +55,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 type WorkspaceMode = 'agent' | 'edit';
-type AgentTab = 'context' | 'notebook';
+type AgentTab = 'context' | 'notebook' | 'scenes' | 'final';
 type MessageRole = 'user' | 'agent';
 
 type Clip = {
@@ -117,6 +117,8 @@ const workflowOptions = [
   { label: 'Script to video', detail: 'Keep your script, build the world' },
   { label: 'Turn this into a Short', detail: 'Repurpose for Reels / TikTok' },
 ];
+
+const projectTabs = ['Film', 'Promo', 'Performance Ad', 'Product Ad', 'Microdrama'];
 
 const defaultPrompt =
   'Create a 35-second launch film for a new kind of city guide. Make it feel like the city is speaking directly to one curious person — tactile, nocturnal, quietly optimistic.';
@@ -188,6 +190,7 @@ function App() {
   const [mutedTracks, setMutedTracks] = useState<string[]>([]);
   const [toast, setToast] = useState('');
   const [agentTab, setAgentTab] = useState<AgentTab>('context');
+  const [activeProjectTab, setActiveProjectTab] = useState('Film');
   const [agentRunning, setAgentRunning] = useState(false);
   const [agentStage, setAgentStage] = useState(0);
   const [messages, setMessages] = useState(initialMessages);
@@ -576,6 +579,8 @@ function App() {
               setMode={setMode}
               agentTab={agentTab}
               setAgentTab={setAgentTab}
+              activeProjectTab={activeProjectTab}
+              setActiveProjectTab={setActiveProjectTab}
               agentRunning={agentRunning}
               agentStage={agentStage}
               messages={messages}
@@ -584,10 +589,14 @@ function App() {
               setRules={setRules}
               rulesEditing={rulesEditing}
               setRulesEditing={setRulesEditing}
+              clips={clips}
+              selectedClip={selectedClip}
+              setSelectedClip={setSelectedClip}
               workflowOpen={workflowOpen}
               setWorkflowOpen={setWorkflowOpen}
               selectWorkflow={selectWorkflow}
               notify={notify}
+              startExport={startExport}
             />
           ) : (
             <EditorWorkspace
@@ -666,6 +675,8 @@ function AgentWorkspace({
   setMode,
   agentTab,
   setAgentTab,
+  activeProjectTab,
+  setActiveProjectTab,
   agentRunning,
   agentStage,
   messages,
@@ -674,16 +685,22 @@ function AgentWorkspace({
   setRules,
   rulesEditing,
   setRulesEditing,
+  clips,
+  selectedClip,
+  setSelectedClip,
   workflowOpen,
   setWorkflowOpen,
   selectWorkflow,
   notify,
+  startExport,
 }: {
   prompt: string;
   setPrompt: (value: string) => void;
   setMode: (mode: WorkspaceMode) => void;
   agentTab: AgentTab;
   setAgentTab: (tab: AgentTab) => void;
+  activeProjectTab: string;
+  setActiveProjectTab: (tab: string) => void;
   agentRunning: boolean;
   agentStage: number;
   messages: AgentMessage[];
@@ -692,10 +709,14 @@ function AgentWorkspace({
   setRules: (value: string) => void;
   rulesEditing: boolean;
   setRulesEditing: (value: boolean) => void;
+  clips: Clip[];
+  selectedClip: string;
+  setSelectedClip: (id: string) => void;
   workflowOpen: boolean;
   setWorkflowOpen: (value: boolean) => void;
   selectWorkflow: (label: string) => void;
   notify: (message: string) => void;
+  startExport: () => void;
 }) {
   const stageLabels = ['Brief', 'Script', 'Storyboard', 'Assets', 'Generation', 'Edit'];
   const [composer, setComposer] = useState('');
@@ -726,11 +747,45 @@ function AgentWorkspace({
 
   return (
     <section className="mx-auto max-w-[1280px] px-4 py-5 sm:px-8 lg:py-7">
+      <div className="mb-5 overflow-x-auto rounded-t-xl border border-border bg-[#101114]">
+        <div className="flex min-w-max items-center">
+          {projectTabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => {
+                setActiveProjectTab(tab);
+                notify(`${tab} project view selected.`);
+              }}
+              data-testid={`button-project-tab-${tab.toLowerCase().replace(/\W+/g, '-')}`}
+              className={`flex items-center gap-2 border-r border-border px-4 py-3 text-[10px] font-semibold transition-colors ${
+                activeProjectTab === tab
+                  ? 'bg-[#242528] text-foreground'
+                  : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+              }`}
+            >
+              <FileText size={12} className={activeProjectTab === tab ? 'text-primary' : ''} />
+              {tab}
+            </button>
+          ))}
+          <button
+            onClick={() => notify('New project created from this workspace.')}
+            data-testid="button-new-project-tab"
+            className="grid h-10 w-10 place-items-center text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+            aria-label="Create a new project"
+          >
+            <Plus size={15} />
+          </button>
+          <div className="ml-auto hidden items-center gap-1 px-3 sm:flex">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-[#a67ce8] text-[9px] font-bold text-white">A</span>
+            <span className="grid h-6 w-6 -ml-2 place-items-center rounded-full bg-[#d2b875] text-[9px] font-bold text-[#2b2418]">Y</span>
+          </div>
+        </div>
+      </div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button onClick={() => notify('Back to projects is ready.')} data-testid="button-back-projects" className="grid h-8 w-8 place-items-center rounded border border-border text-muted-foreground hover:bg-secondary hover:text-foreground"><ArrowLeft size={15} /></button>
           <div>
-            <p className="mono text-[9px] uppercase tracking-[.2em] text-primary">video / Agent Two Pro</p>
+            <p className="mono text-[9px] uppercase tracking-[.2em] text-primary">Agent Two / individual video agent</p>
             <h1 className="mt-1 text-sm font-bold">Night Signal <span className="ml-2 text-xs font-normal text-muted-foreground">· individual video agent</span></h1>
           </div>
         </div>
@@ -742,21 +797,26 @@ function AgentWorkspace({
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0">
-          <div className="mb-4 flex items-center gap-1 border-b border-border">
-            <button onClick={() => setAgentTab('context')} data-testid="button-agent-context-tab" className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-colors ${agentTab === 'context' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+          <div className="mb-4 flex items-center gap-1 overflow-x-auto border-b border-border">
+            <button onClick={() => setAgentTab('context')} data-testid="button-agent-context-tab" className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-colors ${agentTab === 'context' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
               <Braces size={14} className={agentTab === 'context' ? 'text-accent' : ''} /> Context
             </button>
-            <button onClick={() => setAgentTab('notebook')} data-testid="button-agent-notebook-tab" className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-colors ${agentTab === 'notebook' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            <button onClick={() => setAgentTab('notebook')} data-testid="button-agent-notebook-tab" className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-colors ${agentTab === 'notebook' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
               <FileText size={14} className={agentTab === 'notebook' ? 'text-primary' : ''} /> Notebook · Page 1
+            </button>
+            <button onClick={() => setAgentTab('scenes')} data-testid="button-agent-scenes-tab" className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-colors ${agentTab === 'scenes' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+              <Clapperboard size={14} className={agentTab === 'scenes' ? 'text-primary' : ''} /> Scenes
+            </button>
+            <button onClick={() => setAgentTab('final')} data-testid="button-agent-final-tab" className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-colors ${agentTab === 'final' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+              <Film size={14} className={agentTab === 'final' ? 'text-accent' : ''} /> Final
             </button>
             <button onClick={() => notify('New notebook page created.')} data-testid="button-new-notebook-page" className="ml-auto grid h-8 w-8 place-items-center rounded text-muted-foreground hover:bg-secondary hover:text-foreground"><Plus size={15} /></button>
           </div>
 
-          {agentTab === 'context' ? (
-            <ContextView rules={rules} setRules={setRules} rulesEditing={rulesEditing} setRulesEditing={setRulesEditing} notify={notify} />
-          ) : (
-            <NotebookView agentRunning={agentRunning} agentStage={agentStage} notify={notify} />
-          )}
+          {agentTab === 'context' && <ContextView rules={rules} setRules={setRules} rulesEditing={rulesEditing} setRulesEditing={setRulesEditing} notify={notify} />}
+          {agentTab === 'notebook' && <NotebookView agentRunning={agentRunning} agentStage={agentStage} notify={notify} />}
+          {agentTab === 'scenes' && <ScenesView clips={clips} selectedClip={selectedClip} setSelectedClip={setSelectedClip} setMode={setMode} notify={notify} />}
+          {agentTab === 'final' && <FinalView clips={clips} startExport={startExport} setMode={setMode} notify={notify} />}
 
           <div className="mt-5 rounded-xl border border-border bg-[#1a1c20] shadow-md">
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
@@ -865,6 +925,121 @@ function NotebookView({ agentRunning, agentStage, notify }: { agentRunning: bool
     { title: 'Shot 03 — The glance', body: 'A single glance back to camera. Keep the voiceover and performance timing intact.', state: agentStage >= 3 ? 'approved' : 'needs review' },
   ];
   return <div className="space-y-5"><div className="rounded-xl border border-border bg-card/70 p-5"><div className="flex items-center justify-between"><div><p className="mono text-[9px] uppercase tracking-[.18em] text-primary">Notebook / Page 1</p><h2 className="mt-2 text-2xl font-semibold tracking-[-.03em]">The One Hook</h2></div><button onClick={() => notify('Notebook page downloaded.')} data-testid="button-download-notebook" className="grid h-8 w-8 place-items-center rounded border border-border text-muted-foreground hover:bg-secondary hover:text-foreground"><Download size={14} /></button></div><p className="mt-4 max-w-xl text-xs leading-5 text-muted-foreground">A working production document the agent can read, revise, and hand back to the editable Slate without losing context.</p></div><div className="space-y-3">{notebookItems.map((item) => <button key={item.title} onClick={() => notify(`${item.title} selected in Notebook.`)} data-testid={`button-notebook-${item.title.toLowerCase().replace(/\W+/g, '-')}`} className="w-full rounded-lg border border-border bg-card/55 p-4 text-left hover:border-primary/40"><div className="flex items-center justify-between gap-3"><h3 className="text-sm font-bold">{item.title}</h3><span className={`rounded-full px-2 py-1 text-[9px] uppercase tracking-[.12em] ${item.state === 'approved' ? 'bg-accent/12 text-accent' : item.state === 'needs review' ? 'bg-primary/12 text-primary' : 'bg-secondary text-muted-foreground'}`}>{item.state}</span></div><p className="mt-2 text-xs leading-5 text-muted-foreground">{item.body}</p></button>)}</div>{agentRunning && <div className="flex items-center gap-2 rounded-md border border-primary/25 bg-primary/8 px-3 py-2 text-xs text-primary"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" /> Updating Notebook from the current run…</div>}<button onClick={() => notify('Notebook changes approved and sent back to the agent.')} data-testid="button-approve-notebook" className="flex w-full items-center justify-center gap-2 rounded-md border border-accent/40 bg-accent/8 py-2.5 text-xs font-bold text-accent hover:bg-accent/15"><Check size={14} /> Approve notebook changes</button></div>;
+}
+
+function ScenesView({
+  clips,
+  selectedClip,
+  setSelectedClip,
+  setMode,
+  notify,
+}: {
+  clips: Clip[];
+  selectedClip: string;
+  setSelectedClip: (id: string) => void;
+  setMode: (mode: WorkspaceMode) => void;
+  notify: (message: string) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="mono text-[9px] uppercase tracking-[.2em] text-muted-foreground">Agent Two / Scenes</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-[-.03em]">Your film, scene by scene</h2>
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-muted-foreground">Review the generated cut, select a scene to revise, or open it in Slate for frame-accurate editing.</p>
+        </div>
+        <span className="rounded-full border border-accent/20 bg-accent/8 px-2.5 py-1.5 text-[10px] text-accent">{clips.length} editable scenes</span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {clips.map((clip, index) => (
+          <button
+            key={clip.id}
+            onClick={() => {
+              setSelectedClip(clip.id);
+              notify(`${clip.label.split('  —  ')[0]} selected for review.`);
+            }}
+            data-testid={`button-scene-card-${clip.id}`}
+            className={`group overflow-hidden rounded-xl border text-left transition-all hover:-translate-y-0.5 ${
+              selectedClip === clip.id ? 'border-primary/70 bg-primary/6 shadow-lg shadow-primary/5' : 'border-border bg-card/70 hover:border-accent/40'
+            }`}
+          >
+            <div className={`relative aspect-video bg-gradient-to-br ${clip.tone}`}>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_28%,rgba(244,190,108,.35),transparent_20%),linear-gradient(135deg,transparent,rgba(5,8,14,.6))]" />
+              <span className="absolute left-3 top-3 rounded bg-[#0b0d12]/70 px-2 py-1 mono text-[9px] text-[#e8ddc7]">SCENE {String(index + 1).padStart(2, '0')}</span>
+              <span className="absolute bottom-3 right-3 rounded bg-[#0b0d12]/70 px-2 py-1 mono text-[9px] text-[#e8ddc7]">{clip.sub}</span>
+              <span className="absolute inset-0 grid place-items-center opacity-0 transition-opacity group-hover:opacity-100"><Play size={28} className="text-primary" /></span>
+            </div>
+            <div className="flex items-center justify-between gap-3 p-3">
+              <div>
+                <p className="text-xs font-bold text-foreground">{clip.label.replace(/^\d+\s+—\s+/, '')}</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">{clip.state ? `Agentic edit · ${clip.state}` : 'Generated from project context'}</p>
+              </div>
+              <ChevronRight size={15} className="shrink-0 text-muted-foreground" />
+            </div>
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/55 p-4">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground"><Sparkles size={14} className="text-primary" /> Select a scene to keep the rest of the production intact.</div>
+        <button onClick={() => setMode('edit')} data-testid="button-scenes-open-slate" className="flex items-center gap-2 rounded-md border border-accent/40 bg-accent/8 px-3 py-2 text-xs font-bold text-accent hover:bg-accent/15">Open in Slate <ArrowRight size={14} /></button>
+      </div>
+    </div>
+  );
+}
+
+function FinalView({
+  clips,
+  startExport,
+  setMode,
+  notify,
+}: {
+  clips: Clip[];
+  startExport: () => void;
+  setMode: (mode: WorkspaceMode) => void;
+  notify: (message: string) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="mono text-[9px] uppercase tracking-[.2em] text-muted-foreground">Agent Two / Final</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-[-.03em]">Ready for your final pass?</h2>
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-muted-foreground">The agent keeps the project editable until you approve the cut. Export a master or return to Slate for a precise adjustment.</p>
+        </div>
+        <span className="rounded-full border border-accent/20 bg-accent/8 px-2.5 py-1.5 text-[10px] text-accent">Context preserved</span>
+      </div>
+      <div className="overflow-hidden rounded-xl border border-border bg-[#111319]">
+        <div className="relative aspect-video bg-[radial-gradient(circle_at_65%_30%,rgba(208,146,64,.5),transparent_18%),linear-gradient(135deg,#34291e,#101722_54%,#162d35)]">
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,transparent_25%,rgba(0,0,0,.45))]" />
+          <div className="absolute bottom-5 left-5">
+            <p className="mono text-[9px] uppercase tracking-[.2em] text-primary">Night Signal</p>
+            <p className="mt-1 text-lg font-bold">The One Hook</p>
+            <p className="mt-1 text-[10px] text-white/65">{clips.length} scenes · 00:34 · 16:9 cinematic</p>
+          </div>
+          <button onClick={() => notify('Preview playback started.')} data-testid="button-final-preview" className="absolute inset-0 m-auto grid h-12 w-12 place-items-center rounded-full bg-white text-[#101217] shadow-xl transition-transform hover:scale-105"><Play size={20} fill="currentColor" /></button>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground"><Check size={13} className="text-accent" /> Voice, captions, music, and continuity checked</div>
+          <div className="flex gap-2">
+            <button onClick={() => setMode('edit')} data-testid="button-final-edit" className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground">Edit in Slate</button>
+            <button onClick={startExport} data-testid="button-final-export" className="flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"><ArrowDownToLine size={14} /> Export master</button>
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          ['Visual bible', 'Locked', 'text-accent'],
+          ['Audio mix', 'Ready', 'text-accent'],
+          ['Export', '4K H.264', 'text-primary'],
+        ].map(([label, value, color]) => (
+          <div key={label} className="rounded-lg border border-border bg-card/60 p-4">
+            <p className="mono text-[9px] uppercase tracking-[.16em] text-muted-foreground">{label}</p>
+            <p className={`mt-2 text-sm font-bold ${color}`}>{value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 type EditorProps = {
