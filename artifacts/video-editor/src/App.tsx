@@ -54,7 +54,7 @@ import {
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
-type WorkspaceMode = 'agent' | 'edit';
+type WorkspaceMode = 'home' | 'agent' | 'edit';
 type AgentTab = 'context' | 'notebook' | 'scenes' | 'final';
 type MessageRole = 'user' | 'agent';
 
@@ -165,7 +165,7 @@ function IconButton({
 }
 
 function App() {
-  const [mode, setMode] = useState<WorkspaceMode>('agent');
+  const [mode, setMode] = useState<WorkspaceMode>('home');
   const [prompt, setPrompt] = useState(defaultPrompt);
   const [selectedClip, setSelectedClip] = useState('shot-03');
   const [clips, setClips] = useState(initialClips);
@@ -327,6 +327,18 @@ function App() {
     setAgentStage(0);
     setWorkflowOpen(false);
     notify('Agent Two is working through the production chain.');
+  }
+
+  function startCreating(nextPrompt: string) {
+    const value = nextPrompt.trim();
+    if (!value) {
+      notify('Describe the video you want Agent Two to create.');
+      return;
+    }
+    setPrompt(value);
+    setAgentTab('scenes');
+    setMode('agent');
+    runAgent(value);
   }
 
   function applyRevision() {
@@ -523,6 +535,9 @@ function App() {
                 <button onClick={() => notify('A duplicate project would keep the full production state.')} data-testid="button-duplicate-project" className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs hover:bg-secondary">
                   <Copy size={14} /> Duplicate project
                 </button>
+                <button onClick={() => { setMode('home'); setProjectMenuOpen(false); }} data-testid="button-back-to-projects" className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-xs hover:bg-secondary">
+                  <FolderOpen size={14} /> Back to projects
+                </button>
               </div>
             )}
           </div>
@@ -553,6 +568,7 @@ function App() {
       {mobileMenuOpen && (
         <div className="absolute left-3 top-14 z-40 w-60 rounded-b-lg border border-t-0 border-border bg-[#171a20] p-3 shadow-2xl md:hidden">
           <p className="px-2 py-2 text-[10px] uppercase tracking-[.16em] text-muted-foreground">Workspace</p>
+          <button onClick={() => { setMode('home'); setMobileMenuOpen(false); }} data-testid="button-mobile-projects" className="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-left text-xs hover:bg-secondary"><FolderOpen size={15} /> Projects</button>
           <button onClick={() => { setMode('agent'); setMobileMenuOpen(false); }} data-testid="button-mobile-agent" className="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-left text-xs hover:bg-secondary"><Bot size={15} className="text-accent" /> Agent workspace</button>
           <button onClick={() => { setMode('edit'); setMobileMenuOpen(false); }} data-testid="button-mobile-editor" className="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-left text-xs hover:bg-secondary"><Clapperboard size={15} className="text-primary" /> Slate editor</button>
           <button onClick={() => { notify('Template browser opened.'); setMobileMenuOpen(false); }} data-testid="button-mobile-templates" className="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-left text-xs hover:bg-secondary"><LayoutTemplate size={15} /> Templates</button>
@@ -562,17 +578,20 @@ function App() {
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <aside className="hidden w-[66px] shrink-0 flex-col items-center border-r border-border bg-sidebar py-4 md:flex">
           <div className="flex flex-1 flex-col items-center gap-2">
+            <IconButton label="Projects" active={mode === 'home'} onClick={() => setMode('home')} testId="button-sidebar-projects"><FolderOpen size={18} /></IconButton>
             <IconButton label="Agent workspace" active={mode === 'agent'} onClick={() => setMode('agent')} testId="button-sidebar-agent"><Bot size={18} /></IconButton>
             <IconButton label="Slate editor" active={mode === 'edit'} onClick={() => setMode('edit')} testId="button-sidebar-editor"><Clapperboard size={18} /></IconButton>
             <div className="my-2 h-px w-7 bg-border" />
-            <IconButton label="Media library" onClick={() => { setMode('edit'); notify('Media library is open below.'); }} testId="button-sidebar-media"><FolderOpen size={18} /></IconButton>
+            <IconButton label="Media library" onClick={() => { setMode('edit'); notify('Media library is open below.'); }} testId="button-sidebar-media"><HardDriveUpload size={18} /></IconButton>
             <IconButton label="Templates" onClick={() => notify('Template browser opened.')} testId="button-sidebar-templates"><LayoutTemplate size={18} /></IconButton>
             <IconButton label="Audio" onClick={() => { setMode('edit'); notify('Audio track selected.'); }} testId="button-sidebar-audio"><Music2 size={18} /></IconButton>
           </div>
           <IconButton label="Help" onClick={() => notify('FilmStudio help center opened.')} testId="button-sidebar-help"><CircleHelp size={18} /></IconButton>
         </aside>
         <main className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
-          {mode === 'agent' ? (
+          {mode === 'home' ? (
+            <HomeWorkspace startCreating={startCreating} notify={notify} />
+          ) : mode === 'agent' ? (
             <AgentWorkspace
               prompt={prompt}
               setPrompt={setPrompt}
@@ -666,6 +685,106 @@ function App() {
       )}
       <Toaster />
     </div>
+  );
+}
+
+function HomeWorkspace({
+  startCreating,
+  notify,
+}: {
+  startCreating: (prompt: string) => void;
+  notify: (message: string) => void;
+}) {
+  const [idea, setIdea] = useState('');
+  const examples = [
+    'Create a 30-second cinematic launch film for a new streetwear label.',
+    'Turn this product brief into a punchy vertical ad with captions.',
+    'Make a documentary-style video about the future of cities.',
+  ];
+
+  function submitIdea() {
+    startCreating(idea);
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      submitIdea();
+    }
+  }
+
+  return (
+    <section className="relative min-h-[calc(100dvh-56px)] overflow-hidden bg-[#111112] px-4 py-10 sm:px-8 lg:px-14 lg:py-16">
+      <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:linear-gradient(rgba(255,255,255,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.045)_1px,transparent_1px)] [background-size:32px_32px]" />
+      <div className="pointer-events-none absolute -top-28 left-1/2 h-72 w-[42rem] -translate-x-1/2 rounded-full bg-[#7548d8]/20 blur-3xl" />
+      <div className="relative mx-auto max-w-5xl">
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#9976ed]/35 bg-[#6c43ca]/20 px-3 py-1.5 text-[10px] font-semibold text-[#d5c8ff]">
+            <Sparkles size={12} /> Meet Agent Two
+          </div>
+          <h1 className="text-4xl font-semibold leading-[1.05] tracking-[-.055em] text-white sm:text-6xl lg:text-7xl">
+            Make the video.<br /><span className="text-[#bcb1f9]">Agent Two handles the rest.</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-sm leading-6 text-white/60 sm:text-base">
+            Start with an idea, a script, or a brief. Your agent builds the story, finds the assets, and gives you every scene back editable.
+          </p>
+        </div>
+
+        <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-white/15 bg-[#1d1d1f]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-md">
+          <textarea
+            value={idea}
+            onChange={(event) => setIdea(event.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="What do you want to create?"
+            data-testid="input-create-idea"
+            className="min-h-28 w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-white outline-none placeholder:text-white/35"
+          />
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-2 pt-3">
+            <div className="flex items-center gap-2">
+              <button onClick={() => notify('Reference upload is ready for your brief.')} data-testid="button-home-attach" className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-white/55 hover:bg-white/10 hover:text-white"><Plus size={15} /></button>
+              <button onClick={() => notify('Choose a workflow after you describe your idea.')} data-testid="button-home-workflow" className="flex items-center gap-2 rounded-md border border-white/10 px-3 py-2 text-[10px] text-white/60 hover:bg-white/10 hover:text-white"><WandSparkles size={12} /> Workflow <ChevronDown size={11} /></button>
+            </div>
+            <button onClick={submitIdea} data-testid="button-start-creating" className="flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-xs font-bold text-[#19191b] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40" disabled={!idea.trim()}>
+              Start creating <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-5 flex max-w-3xl flex-wrap justify-center gap-2">
+          {examples.map((example) => (
+            <button key={example} onClick={() => setIdea(example)} data-testid={`button-example-${examples.indexOf(example)}`} className="rounded-full border border-white/10 bg-white/[.035] px-3 py-2 text-[10px] text-white/55 transition-colors hover:border-[#a18aef]/40 hover:bg-[#6f4bd0]/10 hover:text-white/85">
+              {example}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-16 overflow-hidden rounded-xl border border-white/10 bg-[#18181a] shadow-2xl">
+          <div className="flex items-center gap-1 overflow-x-auto border-b border-white/10 px-2">
+            {projectTabs.map((tab, index) => (
+              <button key={tab} onClick={() => notify(`${tab} project template selected.`)} data-testid={`button-home-project-${index}`} className={`flex shrink-0 items-center gap-2 px-4 py-3 text-[10px] ${index === 0 ? 'border-b-2 border-white text-white' : 'text-white/45 hover:text-white'}`}>
+                <FileText size={12} /> {tab}
+              </button>
+            ))}
+            <Plus size={14} className="ml-2 text-white/45" />
+          </div>
+          <div className="grid gap-6 p-5 md:grid-cols-[.8fr_1.2fr] md:p-7">
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-2 text-sm font-semibold text-white"><span className="grid h-7 w-7 place-items-center rounded-full bg-[#784ede]"><Bot size={14} /></span> Agent Two</div>
+              <p className="mt-4 max-w-xs text-xs leading-5 text-white/55">Describe a video and Agent Two turns your intent into a script, scenes, voice, music, and a cut you can still change.</p>
+              <div className="mt-5 flex items-center gap-2 text-[10px] text-white/45"><Check size={13} className="text-[#a992f4]" /> Context stays attached to every scene</div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {initialClips.slice(0, 4).map((clip, index) => (
+                <div key={clip.id} className={`relative aspect-video overflow-hidden rounded-md bg-gradient-to-br ${clip.tone}`}>
+                  <div className="absolute inset-0 bg-black/20" />
+                  <span className="absolute left-2 top-2 mono text-[8px] text-white/70">SCENE {String(index + 1).padStart(2, '0')}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
