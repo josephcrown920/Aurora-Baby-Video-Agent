@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: project-memory
+    description: Persistent production memory and continuity operations
 paths:
   /healthz:
     get:
@@ -24,7 +26,178 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /memory/projects/{slug}:
+    get:
+      operationId: getProjectMemory
+      tags: [project-memory]
+      summary: Get project Context, Notebook, and continuity memory
+      parameters:
+        - $ref: "#/components/parameters/ProjectSlug"
+      responses:
+        "200":
+          description: Project memory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectMemory"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /memory/projects/{slug}/generations/prepare:
+    post:
+      operationId: prepareGenerationContext
+      tags: [project-memory]
+      summary: Retrieve relevant memory and build a generation prompt
+      parameters:
+        - $ref: "#/components/parameters/ProjectSlug"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerationContextInput"
+      responses:
+        "200":
+          description: Production memory context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionMemoryContext"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /memory/projects/{slug}/generations:
+    post:
+      operationId: createGenerationEvent
+      tags: [project-memory]
+      summary: Record a generation as a production event
+      parameters:
+        - $ref: "#/components/parameters/ProjectSlug"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerationInput"
+      responses:
+        "201":
+          description: Generation event recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationEvent"
+        "400":
+          description: Invalid request or lock conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictResponse"
+  /memory/generations/{id}/review:
+    post:
+      operationId: reviewGeneration
+      tags: [project-memory]
+      summary: Review a generation and record continuity failures
+      parameters:
+        - $ref: "#/components/parameters/GenerationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerationReviewInput"
+      responses:
+        "200":
+          description: Review recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationReviewResult"
+        "400":
+          description: Invalid review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /memory/generations/{id}/continuity-reference:
+    post:
+      operationId: approveGenerationAsContinuityReference
+      tags: [project-memory]
+      summary: Save an approved generation as authoritative continuity evidence
+      parameters:
+        - $ref: "#/components/parameters/GenerationId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContinuityReferenceInput"
+      responses:
+        "200":
+          description: Continuity reference saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContinuityReferenceResult"
+        "404":
+          description: Generation not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /memory/projects/{slug}/locks:
+    post:
+      operationId: createProjectLock
+      tags: [project-memory]
+      summary: Create a hard production lock
+      parameters:
+        - $ref: "#/components/parameters/ProjectSlug"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LockInput"
+      responses:
+        "201":
+          description: Lock created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryLock"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
+  parameters:
+    ProjectSlug:
+      name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    GenerationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +206,266 @@ components:
           type: string
       required:
         - status
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    ConflictResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        conflict:
+          type: object
+          additionalProperties: true
+        context:
+          $ref: "#/components/schemas/ProductionMemoryContext"
+      required: [error, conflict]
+    MemoryProject:
+      type: object
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        title: { type: string }
+        description: { type: string }
+        context:
+          type: object
+          additionalProperties: true
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, slug, title, description, context, createdAt, updatedAt]
+    ContextSection:
+      type: object
+      properties:
+        id: { type: integer }
+        sectionType: { type: string }
+        title: { type: string }
+        content:
+          type: object
+          additionalProperties: true
+        status: { type: string }
+        isLocked: { type: boolean }
+        priority: { type: integer }
+        updatedAt: { type: string, format: date-time }
+      required: [id, sectionType, title, content, status, isLocked, priority, updatedAt]
+    NotebookEntry:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        entryType: { type: string }
+        description: { type: string }
+        content:
+          type: object
+          additionalProperties: true
+        tags:
+          type: array
+          items: { type: string }
+        status: { type: string }
+        source: { type: string }
+        confidence: { type: number }
+        approvalState: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, title, entryType, description, content, tags, status, source, confidence, approvalState, createdAt, updatedAt]
+    ReferenceAsset:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        purpose: { type: string }
+        authority: { type: string }
+        assetType: { type: string }
+        uri: { type: [string, "null"] }
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt: { type: string, format: date-time }
+      required: [id, name, purpose, authority, assetType, uri, metadata, createdAt]
+    MemoryLock:
+      type: object
+      properties:
+        id: { type: integer }
+        key: { type: string }
+        label: { type: string }
+        rule: { type: string }
+        scope: { type: string }
+        status: { type: string }
+        source: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, key, label, rule, scope, status, source, createdAt]
+    AcceptanceCriterion:
+      type: object
+      properties:
+        id: { type: integer }
+        criterion: { type: string }
+        category: { type: string }
+        severity: { type: string }
+        active: { type: boolean }
+      required: [id, criterion, category, severity, active]
+    GenerationEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        taskType: { type: string }
+        task: { type: string }
+        prompt: { type: string }
+        model: { type: string }
+        provider: { type: string }
+        state: { type: string }
+        approvalState: { type: string }
+        contextSnapshot:
+          type: object
+          additionalProperties: true
+        result:
+          type: object
+          additionalProperties: true
+        failureReason: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+      required: [id, taskType, task, prompt, model, provider, state, approvalState, contextSnapshot, result, failureReason, createdAt]
+    ContinuityEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        generationId: { type: [integer, "null"] }
+        eventType: { type: string }
+        code: { type: string }
+        category: { type: string }
+        message: { type: string }
+        evidence:
+          type: object
+          additionalProperties: true
+        severity: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, generationId, eventType, code, category, message, evidence, severity, createdAt]
+    ProjectMemory:
+      type: object
+      properties:
+        project: { $ref: "#/components/schemas/MemoryProject" }
+        contextSections:
+          type: array
+          items: { $ref: "#/components/schemas/ContextSection" }
+        notebookEntries:
+          type: array
+          items: { $ref: "#/components/schemas/NotebookEntry" }
+        references:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceAsset" }
+        locks:
+          type: array
+          items: { $ref: "#/components/schemas/MemoryLock" }
+        acceptanceCriteria:
+          type: array
+          items: { $ref: "#/components/schemas/AcceptanceCriterion" }
+        generations:
+          type: array
+          items: { $ref: "#/components/schemas/GenerationEvent" }
+        continuityEvents:
+          type: array
+          items: { $ref: "#/components/schemas/ContinuityEvent" }
+      required: [project, contextSections, notebookEntries, references, locks, acceptanceCriteria, generations, continuityEvents]
+    GenerationContextInput:
+      type: object
+      properties:
+        taskType: { type: string, minLength: 1 }
+        task: { type: string, minLength: 1 }
+        shotId: { type: [string, "null"] }
+      required: [taskType, task]
+    GenerationInput:
+      type: object
+      properties:
+        taskType: { type: string, minLength: 1 }
+        task: { type: string, minLength: 1 }
+        model: { type: string }
+        provider: { type: string }
+        result:
+          type: object
+          additionalProperties: true
+      required: [taskType, task]
+    ProductionMemoryContext:
+      type: object
+      properties:
+        project: { $ref: "#/components/schemas/MemoryProject" }
+        task: { type: string }
+        taskType: { type: string }
+        activeContext:
+          type: object
+          additionalProperties: true
+        notebookReferences:
+          type: array
+          items: { $ref: "#/components/schemas/NotebookEntry" }
+        locks:
+          type: array
+          items: { $ref: "#/components/schemas/MemoryLock" }
+        acceptanceCriteria:
+          type: array
+          items: { $ref: "#/components/schemas/AcceptanceCriterion" }
+        authoritativeReferences:
+          type: array
+          items: { $ref: "#/components/schemas/ReferenceAsset" }
+        previousApprovedGenerations:
+          type: array
+          items: { $ref: "#/components/schemas/GenerationEvent" }
+        relevantFailures:
+          type: array
+          items: { $ref: "#/components/schemas/ContinuityEvent" }
+        using:
+          type: array
+          items: { type: string }
+        prompt: { type: string }
+      required: [project, task, taskType, activeContext, notebookReferences, locks, acceptanceCriteria, authoritativeReferences, previousApprovedGenerations, relevantFailures, using, prompt]
+    GenerationReviewInput:
+      type: object
+      properties:
+        accepted: { type: boolean }
+        summary: { type: string, minLength: 1 }
+        score: { type: [number, "null"] }
+        findings:
+          type: array
+          items: { $ref: "#/components/schemas/ContinuityFinding" }
+      required: [accepted, summary]
+    ContinuityFinding:
+      type: object
+      properties:
+        code: { type: string }
+        category: { type: string }
+        message: { type: string }
+        evidence:
+          type: object
+          additionalProperties: true
+        severity: { type: string }
+      required: [code, category, message]
+    GenerationReviewResult:
+      type: object
+      properties:
+        generation: { $ref: "#/components/schemas/GenerationEvent" }
+        review:
+          type: object
+          additionalProperties: true
+        continuityEvents:
+          type: array
+          items: { $ref: "#/components/schemas/ContinuityEvent" }
+      required: [generation, review, continuityEvents]
+    ContinuityReferenceInput:
+      type: object
+      properties:
+        name: { type: string }
+        purpose: { type: string }
+      required: []
+    ContinuityReferenceResult:
+      type: object
+      properties:
+        generation: { $ref: "#/components/schemas/GenerationEvent" }
+        reference: { $ref: "#/components/schemas/ReferenceAsset" }
+      required: [generation, reference]
+    LockInput:
+      type: object
+      properties:
+        key: { type: string, minLength: 1 }
+        label: { type: string, minLength: 1 }
+        rule: { type: string, minLength: 1 }
+        scope: { type: string }
+      required: [key, label, rule]
 
