@@ -36,15 +36,23 @@ Brief + character/reference assets
 
 ## ModelArk
 
+Use a current BytePlus ModelArk API key on the server. The adapter accepts these key names, in order:
+
 ```text
+MODELARK_API_KEY=...
 ARK_API_KEY=...
+BYTEPLUS_API_KEY=...
 ARK_BASE_URL=https://ark.ap-southeast.bytepluses.com/api/v3
 MODELARK_TEXT_MODEL=<active text model or endpoint>
-MODELARK_IMAGE_MODEL=<active Seedream model or endpoint>
-MODELARK_VIDEO_MODEL=<active Seedance model or endpoint>
+MODELARK_IMAGE_MODEL=dola-seedream-5-0-pro-260628
+MODELARK_VIDEO_MODEL=dreamina-seedance-2-5-260628
 ```
 
-Keys remain server-side. Model IDs remain configurable for account/region-specific activation.
+The image UI label `Seedream 5.0 Pro` is normalized to `dola-seedream-5-0-pro-260628`. The video UI label `Seedance 2.5` is normalized to `dreamina-seedance-2-5-260628`.
+
+The adapter also strips an accidental `Bearer ` prefix from environment keys and can try a secondary configured key if the first configured key receives HTTP 401. Keys remain server-side.
+
+For Seedance 2.5, the valid output resolutions are 480p and 720p. If the UI requests an unsupported 1080p/4K value, the backend clamps the request to 720p instead of sending an invalid request.
 
 ## Streaming
 
