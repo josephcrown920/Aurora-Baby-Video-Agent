@@ -1,0 +1,4 @@
+export type CharacterLayer={id:string;characterId:string;name:string;appearanceRef?:string;zIndex:number;visible:boolean;locked:boolean;opacity:number;x:number;y:number;scale:number};
+export type TimelineLayer={id:string;kind:"video"|"character"|"dialogue"|"music"|"sfx"|"caption"|"overlay"|"mask";name:string;start:number;duration:number;zIndex:number;locked:boolean;characterIds?:string[];assetRef?:string};
+export type SceneComposite={sceneId:string;characters:CharacterLayer[];layers:TimelineLayer[];continuityLocks:string[]};
+export function buildSceneComposite(sceneId:string,characters:CharacterLayer[],layers:TimelineLayer[]):SceneComposite{return{sceneId,characters,layers,continuityLocks:["character identity","wardrobe","blocking","props","lighting","camera direction"]};}
