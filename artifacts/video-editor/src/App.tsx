@@ -53,6 +53,7 @@ import {
 } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import CodexTimelinePanel from './components/codex-timeline-panel';
 
 type WorkspaceMode = 'home' | 'agent' | 'edit';
 type AgentTab = 'context' | 'notebook' | 'scenes' | 'final';
@@ -194,6 +195,7 @@ function App() {
   const [agentRunning, setAgentRunning] = useState(false);
   const [agentStage, setAgentStage] = useState(0);
   const [messages, setMessages] = useState(initialMessages);
+  const [codexLinked, setCodexLinked] = useState(false);
   const [rules, setRules] = useState('');
   const [rulesEditing, setRulesEditing] = useState(false);
   const [workflowOpen, setWorkflowOpen] = useState(false);
@@ -472,6 +474,13 @@ function App() {
     notify(`${item.name} added to the video track.`);
   }
 
+  function applyCodexTimeline(result: { clips: typeof clips; selectedClipId?: string; plan: { command: string; summary: string } }) {
+    setClipsWithHistory(result.clips);
+    if (result.selectedClipId) setSelectedClip(result.selectedClipId);
+    setRevisionApplied(false);
+    setMessages((current) => [...current, { id: 'codex-' + Date.now(), role: 'agent', text: 'Codex applied “' + result.plan.command + '” to the live timeline. ' + result.plan.summary, meta: 'Codex timeline · reversible edit' }]);
+    setCodexLinked(true);
+  }
   function startExport() {
     setExported(false);
     setExportProgress(0);
@@ -1283,7 +1292,7 @@ function EditorWorkspace(props: EditorProps) {
     <section className="flex min-h-full flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-[#101217] px-4 py-3 sm:px-6">
         <div><p className="mono text-[9px] uppercase tracking-[.2em] text-primary">Slate / sequence 01</p><h1 className="mt-1 text-sm font-bold">Night Signal <span className="ml-2 text-xs font-normal text-muted-foreground">· 00:34 · 16:9</span></h1></div>
-        <div className="flex items-center gap-2"><span className="hidden items-center gap-1.5 rounded-full border border-accent/20 bg-accent/8 px-2.5 py-1.5 text-[10px] text-accent sm:flex"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> agent + editor synced</span><button onClick={copyShareLink} data-testid="button-share-project" className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground hover:text-foreground"><Copy size={13} /> Share</button><button onClick={startExport} data-testid="button-export-editor" className="flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"><ArrowDownToLine size={14} /> Export</button></div>
+        <div className="flex items-center gap-2"><span className="hidden items-center gap-1.5 rounded-full border border-accent/20 bg-accent/8 px-2.5 py-1.5 text-[10px] text-accent sm:flex"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> agent + editor synced</span><button onClick={() => setCodexLinked(true)} data-testid="button-codex-link" className={`flex items-center gap-2 rounded-md border px-3 py-2 text-[10px] ${codexLinked ? "border-accent/30 bg-accent/8 text-accent" : "border-primary/30 bg-primary/8 text-primary"}`}><Bot size={13} /> {codexLinked ? "Codex linked" : "Link Codex"}</button><button onClick={copyShareLink} data-testid="button-share-project" className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground hover:text-foreground"><Copy size={13} /> Share</button><button onClick={startExport} data-testid="button-export-editor" className="flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"><ArrowDownToLine size={14} /> Export</button></div>
       </div>
 
       <div className="grid min-h-0 flex-1 xl:grid-cols-[minmax(0,1fr)_300px]">
@@ -1315,6 +1324,7 @@ function EditorWorkspace(props: EditorProps) {
             <div className="mobile-scroll scrollbar-thin overflow-x-auto px-4 py-3 sm:px-6"><div className="min-w-[690px]" style={{ width: `${Math.max(100, zoom * 100)}%` }}><div className="mb-2 ml-[94px] flex justify-between mono text-[9px] text-muted-foreground"><span>00:00</span><span>00:08</span><span>00:16</span><span>00:24</span><span>00:32</span></div><div className="relative space-y-2"><div className="pointer-events-none absolute bottom-0 top-[-21px] z-10 w-px bg-primary shadow-[0_0_12px_rgba(239,182,87,.7)]" style={{ left: `calc(94px + (100% - 94px) * ${time / 34})` }}><span className="absolute -left-1.5 -top-1.5 h-3 w-3 rotate-45 bg-primary" /></div><TrackRow label="V1" icon={<Film size={12} />} color="text-primary" muted={mutedTracks.includes('V1')} onToggleMute={() => toggleTrack('V1')}><div className="flex min-w-0 flex-1 gap-1">{clips.map((clip) => <button key={clip.id} onClick={() => setSelectedClip(clip.id)} data-testid={`button-select-clip-${clip.id}`} style={{ width: `${clip.width}%` }} className={`relative h-[52px] shrink-0 overflow-hidden rounded border text-left transition-all ${selectedClip === clip.id ? 'border-primary ring-1 ring-primary/40' : 'border-border/70 hover:border-primary/50'}`}><div className={`absolute inset-0 bg-gradient-to-r ${clip.tone}`} /><span className="relative block truncate px-2 pt-2 text-[10px] font-bold text-[#eee7d8]">{clip.label}</span><span className="relative block px-2 pt-1 text-[9px] text-[#c3bdaa]/80">{clip.state === 'revised' ? 'revised · ' : ''}{clip.sub}</span><span className="absolute bottom-1 left-2 right-2 flex gap-0.5 opacity-40">{[1,2,3,4,5,6,7,8].map((bar) => <i key={bar} className="h-1 flex-1 rounded-full bg-primary" style={{ opacity: bar % 3 === 0 ? .35 : .75 }} />)}</span></button>)}</div></TrackRow><TrackRow label="A1" icon={<AudioLines size={12} />} color="text-accent" muted={mutedTracks.includes('A1')} onToggleMute={() => toggleTrack('A1')}><div className={`h-10 w-[96%] rounded border border-accent/20 bg-accent/10 px-3 py-2 ${mutedTracks.includes('A1') ? 'opacity-35' : ''}`}><div className="flex h-4 items-center gap-0.5 opacity-70">{Array.from({ length: 52 }).map((_, index) => <i key={index} className="flex-1 rounded-full bg-accent" style={{ height: `${20 + Math.abs(Math.sin(index * 1.8)) * 80}%` }} />)}</div><span className="mono text-[8px] text-accent/80">voiceover / night-signal.wav</span></div></TrackRow><TrackRow label="T1" icon={<Captions size={12} />} color="text-[#bfa8eb]" muted={mutedTracks.includes('T1')} onToggleMute={() => toggleTrack('T1')}><div className="h-7 w-[62%] rounded border border-[#bfa8eb]/20 bg-[#8e68be]/15 px-3 py-1.5 text-[9px] text-[#c8b9df]">captions · English (US)</div><div className="h-7 w-[24%] rounded border border-[#bfa8eb]/20 bg-[#8e68be]/10 px-3 py-1.5 text-[9px] text-[#c8b9df]/70">end card</div></TrackRow></div></div></div>
           </div>
 
+          <div className="border-b border-border bg-[#0e1015] p-4 sm:p-6"><CodexTimelinePanel clips={clips} selectedClipId={selectedClip} onApply={applyCodexTimeline} notify={notify} /></div>
           <div className="grid gap-5 border-b border-border bg-[#0e1015] p-4 sm:grid-cols-[1fr_1fr] sm:p-6">
             <div><div className="mb-3 flex items-center gap-2"><WandSparkles size={15} className="text-primary" /><h2 className="text-xs font-bold uppercase tracking-[.13em]">Revise with the agent</h2></div><textarea value={revision} onChange={(event) => setRevision(event.target.value)} data-testid="input-shot-revision" className="min-h-[86px] w-full resize-none rounded-md border border-border bg-card p-3 text-xs leading-5 text-foreground outline-none focus:border-primary/60" /><div className="mt-2 flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Only selected shot · voice preserved</span><button onClick={applyRevision} data-testid="button-apply-revision" className="rounded-md bg-secondary px-3 py-2 text-[11px] font-bold text-foreground hover:bg-secondary/80"><RotateCcw size={12} className="mr-1.5 inline" /> {revisionApplied ? 'Revision applied' : 'Apply revision'}</button></div></div><div className="rounded-md border border-border bg-card/70 p-4"><p className="mono text-[9px] uppercase tracking-[.15em] text-muted-foreground">Agent observation</p><p className="mt-2 text-xs leading-5 text-muted-foreground">Shot 03 has the strongest visual motif. Its current cut is <span className="text-primary">0.8s too slow</span> for the planned reveal. Want me to tighten the entrance?</p><div className="mt-3 flex flex-wrap gap-2"><button onClick={() => notify('Shot trimmed by 0.8 seconds.')} data-testid="button-tighten-shot" className="rounded border border-border px-2.5 py-1.5 text-[10px] text-muted-foreground hover:text-foreground">Tighten entrance</button><button onClick={() => notify('Alternative take queued.')} data-testid="button-queue-take" className="rounded border border-border px-2.5 py-1.5 text-[10px] text-muted-foreground hover:text-foreground">Queue alt take</button></div></div></div>
         </div>
