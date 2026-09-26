@@ -1,15 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { createBlankWorkflow, parseComfyWorkflow, saveStoredWorkflows, validateWorkflow, type ComfyWorkflow } from "../../../../agent-core/comfy-workflows";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { createBlankWorkflow, loadStoredWorkflows, parseComfyWorkflow, saveStoredWorkflows, validateWorkflow, type ComfyWorkflow } from "../../../../agent-core/comfy-workflows";
 
-function loadWorkflows(): ComfyWorkflow[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const value = JSON.parse(window.localStorage.getItem("aurora_baby_comfy_workflows_v1") || "[]");
-    return Array.isArray(value) ? value : [];
-  } catch {
-    return [];
-  }
-}
 
 export default function WorkflowStudio({ notify, onClose }: { notify: (message: string) => void; onClose: () => void }) {
   const [workflows, setWorkflows] = useState<ComfyWorkflow[]>([]);
@@ -20,7 +11,7 @@ export default function WorkflowStudio({ notify, onClose }: { notify: (message: 
   const [running, setRunning] = useState(false);
 
   useEffect(() => {
-    const stored = loadWorkflows();
+    const stored = loadStoredWorkflows();
     const initial = stored.length ? stored : [createBlankWorkflow()];
     setWorkflows(initial);
     select(initial[0]);
@@ -44,7 +35,7 @@ export default function WorkflowStudio({ notify, onClose }: { notify: (message: 
     setStatus("Created a new editable workflow.");
   }
 
-  function importWorkflow(event: React.ChangeEvent<HTMLInputElement>) {
+  function importWorkflow(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
