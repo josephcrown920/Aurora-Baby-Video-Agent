@@ -54,6 +54,8 @@ import {
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import CodexTimelinePanel from './components/codex-timeline-panel';
+import WorkflowStudio from './components/workflow-studio';
+import { primeAgentVoice, speakAgentReply, stopAgentVoice } from './lib/agent-voice';
 
 type WorkspaceMode = 'home' | 'agent' | 'edit';
 type AgentTab = 'context' | 'notebook' | 'scenes' | 'final';
@@ -117,6 +119,7 @@ const workflowOptions = [
   { label: 'Start from an idea', detail: 'Brief → script → first cut' },
   { label: 'Script to video', detail: 'Keep your script, build the world' },
   { label: 'Turn this into a Short', detail: 'Repurpose for Reels / TikTok' },
+  { label: 'Open Workflow Studio', detail: 'Import, create, edit and run ComfyUI workflows' },
 ];
 
 const projectTabs = ['Film', 'Promo', 'Performance Ad', 'Product Ad', 'Microdrama'];
@@ -196,6 +199,8 @@ function App() {
   const [agentStage, setAgentStage] = useState(0);
   const [messages, setMessages] = useState(initialMessages);
   const [codexLinked, setCodexLinked] = useState(false);
+  const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [rules, setRules] = useState('');
   const [rulesEditing, setRulesEditing] = useState(false);
   const [workflowOpen, setWorkflowOpen] = useState(false);
@@ -245,15 +250,17 @@ function App() {
         if (current >= 5) {
           window.clearInterval(timer);
           setAgentRunning(false);
+          const reply = 'The first cut is ready to review. I preserved the project memory and kept every scene editable in Slate.';
           setMessages((currentMessages) => [
             ...currentMessages,
             {
               id: `agent-${Date.now()}`,
               role: 'agent',
-              text: 'The first cut is ready to review. I preserved the project memory and kept every scene editable in Slate.',
+              text: reply,
               meta: 'Agent Two Pro · first cut ready',
             },
           ]);
+          if (voiceEnabled) speakAgentReply(reply);
           setToast('First cut ready. Nothing was flattened.');
           return 5;
         }
@@ -321,6 +328,8 @@ function App() {
       notify('Tell the agent what you want to make first.');
       return;
     }
+    primeAgentVoice();
+    if (voiceEnabled) speakAgentReply('I’m working through the production chain now.');
     setMessages((current) => [
       ...current,
       { id: `user-${Date.now()}`, role: 'user', text: nextPrompt.trim() },
@@ -489,6 +498,11 @@ function App() {
   }
 
   function selectWorkflow(label: string) {
+    if (label === 'Open Workflow Studio') {
+      setWorkflowStudioOpen(true);
+      setWorkflowOpen(false);
+      return;
+    }
     if (label === 'Turn this into a Short') {
       setPrompt('Repurpose the current film into three punchy vertical Shorts. Keep the strongest hook, captions, and the visual bible intact.');
     }
@@ -819,6 +833,10 @@ function AgentWorkspace({
   workflowOpen,
   setWorkflowOpen,
   selectWorkflow,
+  workflowStudioOpen,
+  setWorkflowStudioOpen,
+  voiceEnabled,
+  setVoiceEnabled,
   notify,
   startExport,
 }: {
@@ -843,6 +861,10 @@ function AgentWorkspace({
   workflowOpen: boolean;
   setWorkflowOpen: (value: boolean) => void;
   selectWorkflow: (label: string) => void;
+  workflowStudioOpen: boolean;
+  setWorkflowStudioOpen: (value: boolean) => void;
+  voiceEnabled: boolean;
+  setVoiceEnabled: (value: boolean) => void;
   notify: (message: string) => void;
   startExport: () => void;
 }) {
@@ -949,7 +971,10 @@ function AgentWorkspace({
           <div className="mt-5 rounded-xl border border-border bg-[#1a1c20] shadow-md">
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
               <div className="flex items-center gap-2 text-[10px] uppercase tracking-[.16em] text-muted-foreground"><Sparkles size={13} className="text-primary" /> Agent conversation</div>
-              <span className="mono text-[9px] text-muted-foreground">{agentRunning ? 'working' : 'ready'}</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => { const next = !voiceEnabled; setVoiceEnabled(next); if (next) { primeAgentVoice(); speakAgentReply('Voice replies are now enabled.'); } else { stopAgentVoice(); } }} className="rounded border border-border px-2 py-1 text-[9px] text-muted-foreground hover:text-foreground">{voiceEnabled ? '🔊 Voice' : '🔇 Voice'}</button>
+                <span className="mono text-[9px] text-muted-foreground">{agentRunning ? 'working' : 'ready'}</span>
+              </div>
             </div>
             <div className="max-h-52 space-y-3 overflow-y-auto p-4">
               {messages.slice(-4).map((message) => (
@@ -977,6 +1002,7 @@ function AgentWorkspace({
                 </div>
                 <div className="flex items-center gap-2"><span className="hidden text-[10px] text-muted-foreground sm:inline">Agent Two Pro</span><button onClick={() => notify('Agent settings opened.')} data-testid="button-agent-settings" className="text-muted-foreground hover:text-foreground"><Settings2 size={13} /></button></div>
               </div>
+              {workflowStudioOpen && <WorkflowStudio notify={notify} onClose={() => setWorkflowStudioOpen(false)} />}
               <input ref={composerFileRef} type="file" multiple accept="image/*,video/*,audio/*,.pdf,.txt" onChange={addReferenceFiles} className="hidden" data-testid="input-agent-reference" />
             </div>
           </div>
