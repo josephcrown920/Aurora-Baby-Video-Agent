@@ -45,3 +45,20 @@ export function validateWorkflow(workflow: ComfyWorkflow) {
 export function serializeWorkflow(workflow: ComfyWorkflow) {
   return workflow.format === "api" ? workflow.prompt : workflow.ui || workflow.prompt;
 }
+ 
+export const BABY_WORKFLOW_STORE_KEY = "aurora_baby_comfy_workflows_v1";
+
+export function loadStoredWorkflows(): ComfyWorkflow[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const value = JSON.parse(window.localStorage.getItem(BABY_WORKFLOW_STORE_KEY) || "[]");
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredWorkflows(workflows: ComfyWorkflow[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(BABY_WORKFLOW_STORE_KEY, JSON.stringify(workflows));
+}
