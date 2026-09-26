@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createBlankWorkflow, parseComfyWorkflow, saveStoredWorkflows, validateWorkflow, type ComfyWorkflow } from "../../../agent-core/comfy-workflows";
+import { createBlankWorkflow, parseComfyWorkflow, saveStoredWorkflows, validateWorkflow, type ComfyWorkflow } from "../../../../agent-core/comfy-workflows";
 
 function loadWorkflows(): ComfyWorkflow[] {
   if (typeof window === "undefined") return [];
